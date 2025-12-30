@@ -1,0 +1,181 @@
+import { QuizQuestion } from "@/types/quiz";
+
+export const QUIZ_QUESTIONS: QuizQuestion[] = [
+  {
+    id: "1",
+    type: "single",
+    question: "Qual é o seu objetivo principal?",
+    options: [
+      "Perder peso",
+      "Ganhar massa muscular",
+      "Manter peso",
+      "Melhorar hábitos",
+    ],
+  },
+  {
+    id: "2",
+    type: "single",
+    question: "Qual é o seu nível de treino atualmente?",
+    options: ["Iniciante", "Intermediário", "Avançado"],
+  },
+  {
+    id: "3",
+    type: "single",
+    question: "Quantas vezes você treina por semana?",
+    options: [
+      "Não treino",
+      "1–2x por semana",
+      "3–4x por semana",
+      "5–6x por semana",
+      "Todos os dias",
+    ],
+  },
+  {
+    id: "4",
+    type: "single",
+    question: "Você já tentou seguir uma dieta antes?",
+    options: ["Sim, muitas vezes", "Algumas vezes", "Poucas vezes", "Nunca"],
+    motivationText:
+      "Ótimo. Pessoas com um objetivo claro têm até 3x mais chances de manter consistência quando seguem um plano personalizado.",
+  },
+  {
+    id: "5",
+    type: "single",
+    question: "Em qual período do dia você costuma treinar?",
+    options: ["Manhã", "Tarde", "Noite", "Varia muito", "Não treino"],
+  },
+  {
+    id: "6",
+    type: "multiple",
+    question: "Como é sua rotina de trabalho ou estudo?",
+    options: [
+      "Sentado o dia todo",
+      "Em pé o dia todo",
+      "Muito movimento",
+      "Rotina corrida",
+      "Tenho bastante tempo livre",
+    ],
+  },
+  {
+    id: "7",
+    type: "single",
+    question: "Quantas refeições você faz por dia?",
+    options: ["2", "3", "4", "5 ou mais"],
+  },
+  {
+    id: "8",
+    type: "single",
+    question: "Como você avalia sua alimentação atualmente?",
+    options: ["Muito ruim", "Ruim", "Mediana", "Boa", "Muito boa"],
+    motivationText:
+      "Seu plano será adaptado à sua rotina — não o contrário. É assim que resultados se tornam sustentáveis.",
+  },
+  {
+    id: "9",
+    type: "single",
+    question: "Qual é o seu gênero?",
+    options: ["Masculino", "Feminino", "Outro"],
+  },
+  {
+    id: "10",
+    type: "date",
+    question: "Quando você nasceu?",
+  },
+  {
+    id: "11",
+    type: "number",
+    question: "Qual é a sua altura?",
+    unit: "cm",
+  },
+  {
+    id: "12",
+    type: "number",
+    question: "Qual é o seu peso atual?",
+    unit: "kg",
+  },
+  {
+    id: "13",
+    type: "number",
+    question: "Qual peso você deseja atingir?",
+    unit: "kg",
+    motivationText:
+      "Com base nos seus dados, é possível estimar uma evolução segura e realista. Usuários com perfis semelhantes ao seu começam a notar mudanças visíveis entre 2 e 4 semanas.",
+  },
+  {
+    id: "14",
+    type: "single",
+    question: "Como você avalia sua disciplina hoje?",
+    options: ["Muito baixa", "Baixa", "Média", "Alta", "Muito alta"],
+  },
+  {
+    id: "15",
+    type: "multiple",
+    question: "Qual é sua maior dificuldade atualmente?",
+    options: [
+      "Falta de disciplina",
+      "Falta de organização",
+      "Não sei o que comer",
+      "Falta de tempo",
+      "Esqueço de registrar refeições",
+    ],
+  },
+  {
+    id: "16",
+    type: "single",
+    question: "Qual é o horário mais difícil do seu dia?",
+    options: ["Manhã", "Tarde", "Noite", "Madrugada"],
+  },
+  {
+    id: "17",
+    type: "single",
+    question: "Como está seu consumo diário de água?",
+    options: ["Quase nada", "Pouco", "Moderado", "Muito", "Bebo o suficiente"],
+  },
+  {
+    id: "18",
+    type: "single",
+    question: "Como está a qualidade do seu sono?",
+    options: ["Muito ruim", "Ruim", "Normal", "Bom", "Excelente"],
+    motivationText:
+      "Você não precisa ser perfeito. Seu plano será construído para funcionar mesmo nos dias difíceis.",
+  },
+  {
+    id: "19",
+    type: "single",
+    question: "O que você mais espera do app?",
+    options: [
+      "Organização",
+      "Motivação",
+      "Simplicidade",
+      "Acompanhamento",
+      "Tudo isso",
+    ],
+  },
+  {
+    id: "20",
+    type: "single",
+    question: "Em quanto tempo você gostaria de ver resultados?",
+    options: [
+      "2 semanas",
+      "1 mês",
+      "2 meses",
+      "3 meses",
+      "Quero algo sustentável, sem pressa",
+    ],
+  },
+  {
+    id: "21",
+    type: "multiple",
+    question: "Você possui alguma alergia ou intolerância alimentar?",
+    options: [
+      "Glúten",
+      "Lactose",
+      "Ovos",
+      "Amendoim",
+      "Frutos do mar",
+      "Nenhuma",
+    ],
+    motivationText:
+      "Estamos prontos para montar um plano totalmente adaptado ao seu objetivo, sua rotina e suas dificuldades. Você está a poucos segundos de ver algo feito exclusivamente para você.",
+  },
+];
