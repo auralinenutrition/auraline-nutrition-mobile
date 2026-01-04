@@ -6,18 +6,10 @@
     "orientation": "portrait",
     "scheme": "auraline",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": false,
-      "bundleIdentifier": "com.auraline.nutrition"
     },
     "android": {
       "package": "com.auraline.nutrition",
@@ -26,10 +18,7 @@
         "backgroundColor": "#ffffff"
       }
     },
-    "plugins": [
-      "expo-router",
-      "expo-dev-client"
-    ],
+    "plugins": ["expo-router"],
     "extra": {
       "router": {},
       "eas": {
