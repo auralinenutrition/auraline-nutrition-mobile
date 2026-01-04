@@ -1,3 +1,12 @@
+import 'react-native-gesture-handler';
+import 'react-native-reanimated';
+import { Slot } from 'expo-router';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
 export default function RootLayout() {
-  throw new Error('TESTE DE ERRO CONTROLADO');
+  return (
+    <SafeAreaProvider>
+      <Slot />
+    </SafeAreaProvider>
+  );
 }
