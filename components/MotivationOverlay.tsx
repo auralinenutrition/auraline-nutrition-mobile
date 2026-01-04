@@ -11,43 +11,50 @@ interface MotivationOverlayProps {
   onClose: () => void;
 }
 
-export function MotivationOverlay({ 
-  visible, 
-  motivation, 
+export function MotivationOverlay({
+  visible,
+  motivation,
   questionId,
   answers,
-  onClose 
+  onClose,
 }: MotivationOverlayProps) {
   const insets = useSafeAreaInsets();
 
-  if (!motivation) return null;
+  // 🔒 Blindagem TOTAL: nunca renderiza Modal sem dados válidos
+  if (!visible || !motivation) {
+    return null;
+  }
 
-  // Gerar dados do gráfico para pergunta 13
   const getChartData = () => {
-    if (questionId !== '13' || !answers) return null;
-    
-    const currentWeight = Number(answers['12']); // Peso atual (pergunta 12)
-    const targetWeight = Number(answers['13']); // Peso desejado (pergunta 13)
-    
-    if (!currentWeight || !targetWeight || currentWeight === targetWeight) return null;
-    
+    if (questionId !== '13') return null;
+    if (!answers) return null;
+
+    const current = Number(answers['12']);
+    const target = Number(answers['13']);
+
+    if (!Number.isFinite(current) || !Number.isFinite(target)) return null;
+    if (current === target) return null;
+
     const weeks = 6;
-    const totalChange = targetWeight - currentWeight;
+    const totalChange = target - current;
     const weeklyChange = totalChange / weeks;
-    
-    const data = [];
-    for (let i = 0; i <= weeks; i++) {
-      data.push({
-        week: i + 1,
-        weight: Math.round((currentWeight + (weeklyChange * i)) * 10) / 10,
-      });
-    }
-    
-    return { data, currentWeight, targetWeight };
+
+    const data = Array.from({ length: weeks + 1 }, (_, i) => ({
+      week: i + 1,
+      weight: Math.round((current + weeklyChange * i) * 10) / 10,
+    }));
+
+    if (data.length === 0) return null;
+
+    return {
+      data,
+      currentWeight: current,
+      targetWeight: target,
+    };
   };
 
   const chartData = getChartData();
-  const showChart = questionId === '13' && chartData;
+  const showChart = questionId === '13' && !!chartData && chartData.data.length > 0;
 
   return (
     <Modal
@@ -60,37 +67,48 @@ export function MotivationOverlay({
         <View style={[styles.content, { paddingTop: insets.top + spacing.xl }]}>
           <View style={styles.card}>
             {!showChart && <Text style={styles.emoji}>✨</Text>}
+
             {motivation.title ? (
               <Text style={styles.title}>{motivation.title}</Text>
             ) : null}
-            
-            {showChart ? (
+
+            {showChart && chartData && (
               <View style={styles.chartContainer}>
                 <Text style={styles.chartTitle}>
                   Projeção estimada baseada em perfis semelhantes ao seu
                 </Text>
+
                 <View style={styles.chartWrapper}>
                   <View style={styles.chart}>
-                    {chartData.data.map((point, idx) => {
-                      const maxWeight = Math.max(...chartData.data.map(d => d.weight));
-                      const minWeight = Math.min(...chartData.data.map(d => d.weight));
+                    {chartData.data.map((point, index) => {
+                      const weights = chartData.data.map(d => d.weight);
+                      const maxWeight = Math.max(...weights);
+                      const minWeight = Math.min(...weights);
                       const range = maxWeight - minWeight || 0.1;
-                      const yPosition = 160 - ((point.weight - minWeight) / range) * 160;
-                      const isLast = idx === chartData.data.length - 1;
-                      const nextPoint = !isLast ? chartData.data[idx + 1] : null;
-                      const nextY = nextPoint 
-                        ? 160 - ((nextPoint.weight - minWeight) / range) * 160 
+
+                      const yPosition =
+                        160 - ((point.weight - minWeight) / range) * 160;
+
+                      const isLast = index === chartData.data.length - 1;
+                      const nextPoint = !isLast
+                        ? chartData.data[index + 1]
+                        : null;
+
+                      const nextY = nextPoint
+                        ? 160 -
+                          ((nextPoint.weight - minWeight) / range) * 160
                         : yPosition;
-                      
+
                       return (
-                        <View key={idx} style={styles.chartItem}>
-                          <View style={[styles.chartBarContainer, { height: 160 }]}>
+                        <View key={index} style={styles.chartItem}>
+                          <View style={styles.chartBarContainer}>
                             <View
                               style={[
                                 styles.chartPoint,
-                                { bottom: yPosition - 4 }
+                                { bottom: yPosition - 4 },
                               ]}
                             />
+
                             {!isLast && (
                               <>
                                 <View
@@ -100,9 +118,10 @@ export function MotivationOverlay({
                                       bottom: yPosition - 4,
                                       left: '50%',
                                       width: '50%',
-                                    }
+                                    },
                                   ]}
                                 />
+
                                 {Math.abs(nextY - yPosition) > 2 && (
                                   <View
                                     style={[
@@ -111,13 +130,14 @@ export function MotivationOverlay({
                                         bottom: Math.min(yPosition, nextY) - 4,
                                         left: '100%',
                                         height: Math.abs(nextY - yPosition),
-                                      }
+                                      },
                                     ]}
                                   />
                                 )}
                               </>
                             )}
                           </View>
+
                           <Text style={styles.chartXLabel}>
                             S{point.week}
                           </Text>
@@ -125,22 +145,27 @@ export function MotivationOverlay({
                       );
                     })}
                   </View>
+
                   <View style={styles.chartYLabels}>
                     <Text style={styles.chartYLabel}>
-                      {Math.max(...chartData.data.map(d => d.weight)).toFixed(1)}kg
+                      {Math.max(...chartData.data.map(d => d.weight)).toFixed(1)}
+                      kg
                     </Text>
                     <Text style={styles.chartYLabel}>
-                      {Math.min(...chartData.data.map(d => d.weight)).toFixed(1)}kg
+                      {Math.min(...chartData.data.map(d => d.weight)).toFixed(1)}
+                      kg
                     </Text>
                   </View>
                 </View>
+
                 <Text style={styles.chartSubtitle}>
                   Resultados reais dependem de consistência e acompanhamento.
                 </Text>
               </View>
-            ) : null}
-            
+            )}
+
             <Text style={styles.text}>{motivation.text}</Text>
+
             <TouchableOpacity
               style={styles.button}
               onPress={onClose}
@@ -224,7 +249,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'flex-end',
-    position: 'relative',
     paddingBottom: spacing.base,
   },
   chartItem: {
@@ -234,6 +258,7 @@ const styles = StyleSheet.create({
   },
   chartBarContainer: {
     width: '100%',
+    height: 160,
     position: 'relative',
     alignItems: 'center',
   },
@@ -280,4 +305,3 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
 });
-
