@@ -1,11 +1,15 @@
 {
   "name": "auraline-nutrition-mobile",
   "version": "1.0.0",
+  "private": true,
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
-    "ios": "expo run:ios"
+    "ios": "expo run:ios",
+    "prebuild": "expo prebuild",
+    "build:android": "eas build -p android",
+    "build:android:local": "expo run:android --variant release"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.1.2",
@@ -23,9 +27,9 @@
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
+    "@types/react": "^19.0.0",
+    "babel-plugin-module-resolver": "^5.0.2",
     "babel-preset-expo": "~13.0.0",
-    "typescript": "~5.8.3",
-    "@types/react": "~19.0.10"
-  },
-  "private": true
+    "typescript": "~5.8.3"
+  }
 }
