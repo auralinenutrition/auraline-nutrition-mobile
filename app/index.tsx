@@ -1,6 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors, spacing, typography, layout } from '@/theme';
 
 export default function LandingScreen() {
   const router = useRouter();
@@ -39,54 +40,61 @@ export default function LandingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.background,
   },
+
   content: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.xl,
   },
+
   title: {
+    ...typography.xl,
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    marginBottom: 12,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
     textAlign: 'center',
   },
+
   subtitle: {
-    fontSize: 16,
-    color: '#666666',
+    ...typography.base,
+    color: colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
   },
+
   actions: {
-    paddingHorizontal: 24,
-    gap: 12,
+    paddingHorizontal: spacing.xl,
+    gap: spacing.md,
   },
+
   primaryButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 16,
-    borderRadius: 12,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.md + 4,
+    borderRadius: layout.borderRadius.base,
     alignItems: 'center',
   },
+
   primaryButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
+    ...typography.base,
+    color: colors.white,
   },
+
   secondaryButton: {
     backgroundColor: 'transparent',
-    paddingVertical: 16,
-    borderRadius: 12,
+    paddingVertical: spacing.md + 4,
+    borderRadius: layout.borderRadius.base,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#007AFF',
+    borderColor: colors.primary,
   },
+
   secondaryButtonText: {
-    color: '#007AFF',
-    fontSize: 16,
-    fontWeight: '600',
+    ...typography.base,
+    color: colors.primary,
   },
 });
+
 

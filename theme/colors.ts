@@ -1,36 +1,36 @@
 export const colors = {
-  // Cores primárias
-  primary: '#00c758',
-  primaryDark: '#00a544',
-  primaryLight: '#5AC8FA',
-  
-  // Cores de texto
-  text: '#ffffff',
-  textSecondary: '#000000',
-  textTertiary: '#000000',
-  
-  // Cores de fundo
-  white: '#ffffff',
-  background: '#ffffff',
-  backgroundSecondary: '#f9f9f9',
-  backgroundTertiary: '#f5f5f5',
-  
-  // Cores de borda
-  border: '#e0e0e0',
-  borderLight: '#f0f0f0',
-  
-  // Cores de estado
-  success: '#34C759',
-  error: '#ff3b30',
+  // 🌿 Cores primárias
+  primary: '#00C758',
+  primaryDark: '#00A544',
+  primaryLight: '#E5F8ED',
+
+  // ✍️ Texto
+  textPrimary: '#121212',
+  textSecondary: '#6B7280',
+  textTertiary: '#9CA3AF',
+
+  // 🧱 Fundos
+  white: '#FFFFFF',
+  background: '#FAFAFA',
+  backgroundSecondary: '#F9F9F9',
+  backgroundTertiary: '#F5F5F5',
+
+  // 📐 Bordas
+  border: '#E0E0E0',
+  borderLight: '#F0F0F0',
+
+  // 🚦 Estados
+  success: '#00C758',
+  error: '#FF3B30',
   warning: '#FF9500',
   info: '#007AFF',
-  
-  // Overlay
+
+  // 🌫 Overlay
   overlay: 'rgba(0, 0, 0, 0.5)',
-  
-  // Cores específicas do quiz
-  optionSelected: '#E3F2FD',
-  optionBorder: '#e0e0e0',
+
+  // 🎯 Específico do quiz
+  optionSelected: '#E5F8ED',
+  optionBorder: '#E0E0E0',
 } as const;
 
 export type Colors = typeof colors;

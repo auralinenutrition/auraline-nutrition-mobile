@@ -117,6 +117,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+
   header: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
@@ -124,30 +125,36 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+
   backText: {
     ...typography.sm,
     color: colors.primary,
   },
+
   stepText: {
     ...typography.sm,
     color: colors.textSecondary,
   },
+
   content: {
     flex: 1,
     paddingHorizontal: spacing.lg,
     justifyContent: 'center',
   },
+
   question: {
     ...typography.xl,
-    fontWeight: typography.bold,
-    color: colors.text,
+    color: colors.textSecondary,
     textAlign: 'center',
     marginBottom: spacing.xl,
   },
+
   answers: {
     gap: spacing.md,
   },
+
   option: {
+    backgroundColor: colors.white,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: layout.borderRadius.base,
@@ -155,30 +162,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     alignItems: 'center',
   },
+
   optionSelected: {
     borderColor: colors.primary,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.primaryLight,
   },
+
   optionText: {
     ...typography.base,
-    color: colors.text,
+    color: colors.textSecondary,
   },
+
   optionTextSelected: {
-    color: colors.primary,
-    fontWeight: typography.semibold,
+    color: colors.primaryDark,
   },
+
   footer: {
     paddingHorizontal: spacing.lg,
   },
+
   continueButton: {
     backgroundColor: colors.primary,
     borderRadius: layout.borderRadius.base,
     paddingVertical: spacing.md + 4,
     alignItems: 'center',
   },
+
   continueText: {
     ...typography.base,
     color: colors.white,
-    fontWeight: typography.semibold,
   },
 });
+

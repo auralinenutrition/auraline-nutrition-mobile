@@ -1,5 +1,4 @@
 export const typography = {
-  // Tamanhos de fonte
   xs: {
     fontSize: 12,
     lineHeight: 16,
@@ -20,16 +19,4 @@ export const typography = {
     fontSize: 24,
     lineHeight: 32,
   },
-  xxl: {
-    fontSize: 32,
-    lineHeight: 40,
-  },
-  
-  // Pesos de fonte
-  regular: '400' as const,
-  medium: '500' as const,
-  semibold: '600' as const,
-  bold: '700' as const,
 } as const;
-
-export type Typography = typeof typography;
