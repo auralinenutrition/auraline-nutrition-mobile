@@ -20,17 +20,28 @@ export function MotivationOverlay({
 }: MotivationOverlayProps) {
   const insets = useSafeAreaInsets();
 
-  // 🔒 Blindagem TOTAL: nunca renderiza Modal sem dados válidos
+  /**
+   * 🔒 BLINDAGEM CRÍTICA
+   * Nunca renderizar Modal se QUALQUER dado essencial estiver ausente.
+   * Isso evita crash nativo no Android (Global was not installed).
+   */
   if (!visible || !motivation) {
     return null;
   }
 
+  /**
+   * Geração segura dos dados do gráfico
+   * Nenhum cálculo roda com undefined / NaN / array vazio
+   */
   const getChartData = () => {
     if (questionId !== '13') return null;
     if (!answers) return null;
 
-    const current = Number(answers['12']);
-    const target = Number(answers['13']);
+    const currentRaw = answers['12'];
+    const targetRaw = answers['13'];
+
+    const current = Number(currentRaw);
+    const target = Number(targetRaw);
 
     if (!Number.isFinite(current) || !Number.isFinite(target)) return null;
     if (current === target) return null;
@@ -54,7 +65,11 @@ export function MotivationOverlay({
   };
 
   const chartData = getChartData();
-  const showChart = questionId === '13' && !!chartData && chartData.data.length > 0;
+  const showChart =
+    questionId === '13' &&
+    chartData !== null &&
+    Array.isArray(chartData.data) &&
+    chartData.data.length > 0;
 
   return (
     <Modal
