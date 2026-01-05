@@ -1,13 +1,13 @@
-import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { QuizMotivation, QuizAnswer } from '@/types/quiz';
-import { colors, spacing, typography, layout } from '@/theme';
+import { View, Text, TouchableOpacity, StyleSheet, Modal } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { QuizMotivation, QuizAnswer } from "@/types/quiz";
+import { colors, spacing, typography, layout } from "@/theme";
 
 interface MotivationOverlayProps {
   visible: boolean;
   motivation: QuizMotivation | null;
   questionId?: string;
-  answers?: Record<string, QuizAnswer['answer']>;
+  answers?: Record<string, QuizAnswer["answer"]>;
   onClose: () => void;
 }
 
@@ -34,11 +34,11 @@ export function MotivationOverlay({
    * Nenhum cálculo roda com undefined / NaN / array vazio
    */
   const getChartData = () => {
-    if (questionId !== '13') return null;
+    if (questionId !== "13") return null;
     if (!answers) return null;
 
-    const currentRaw = answers['12'];
-    const targetRaw = answers['13'];
+    const currentRaw = answers["12"];
+    const targetRaw = answers["13"];
 
     const current = Number(currentRaw);
     const target = Number(targetRaw);
@@ -66,18 +66,17 @@ export function MotivationOverlay({
 
   const chartData = getChartData();
   const showChart =
-    questionId === '13' &&
+    questionId === "13" &&
     chartData !== null &&
     Array.isArray(chartData.data) &&
     chartData.data.length > 0;
 
+  if (!visible || !motivation) {
+    return null;
+  }
+
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={[styles.content, { paddingTop: insets.top + spacing.xl }]}>
           <View style={styles.card}>
@@ -96,7 +95,7 @@ export function MotivationOverlay({
                 <View style={styles.chartWrapper}>
                   <View style={styles.chart}>
                     {chartData.data.map((point, index) => {
-                      const weights = chartData.data.map(d => d.weight);
+                      const weights = chartData.data.map((d) => d.weight);
                       const maxWeight = Math.max(...weights);
                       const minWeight = Math.min(...weights);
                       const range = maxWeight - minWeight || 0.1;
@@ -110,8 +109,7 @@ export function MotivationOverlay({
                         : null;
 
                       const nextY = nextPoint
-                        ? 160 -
-                          ((nextPoint.weight - minWeight) / range) * 160
+                        ? 160 - ((nextPoint.weight - minWeight) / range) * 160
                         : yPosition;
 
                       return (
@@ -131,8 +129,8 @@ export function MotivationOverlay({
                                     styles.chartLineHorizontal,
                                     {
                                       bottom: yPosition - 4,
-                                      left: '50%',
-                                      width: '50%',
+                                      left: "50%",
+                                      width: "50%",
                                     },
                                   ]}
                                 />
@@ -143,7 +141,7 @@ export function MotivationOverlay({
                                       styles.chartLineVertical,
                                       {
                                         bottom: Math.min(yPosition, nextY) - 4,
-                                        left: '100%',
+                                        left: "100%",
                                         height: Math.abs(nextY - yPosition),
                                       },
                                     ]}
@@ -153,9 +151,7 @@ export function MotivationOverlay({
                             )}
                           </View>
 
-                          <Text style={styles.chartXLabel}>
-                            S{point.week}
-                          </Text>
+                          <Text style={styles.chartXLabel}>S{point.week}</Text>
                         </View>
                       );
                     })}
@@ -163,11 +159,15 @@ export function MotivationOverlay({
 
                   <View style={styles.chartYLabels}>
                     <Text style={styles.chartYLabel}>
-                      {Math.max(...chartData.data.map(d => d.weight)).toFixed(1)}
+                      {Math.max(...chartData.data.map((d) => d.weight)).toFixed(
+                        1
+                      )}
                       kg
                     </Text>
                     <Text style={styles.chartYLabel}>
-                      {Math.min(...chartData.data.map(d => d.weight)).toFixed(1)}
+                      {Math.min(...chartData.data.map((d) => d.weight)).toFixed(
+                        1
+                      )}
                       kg
                     </Text>
                   </View>
@@ -199,19 +199,19 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: colors.overlay,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: spacing.xl,
   },
   content: {
-    width: '100%',
+    width: "100%",
     maxWidth: 400,
   },
   card: {
     backgroundColor: colors.white,
     borderRadius: layout.borderRadius.xl,
     padding: spacing.xl,
-    alignItems: 'center',
+    alignItems: "center",
     ...layout.shadow.medium,
   },
   emoji: {
@@ -222,13 +222,13 @@ const styles = StyleSheet.create({
     ...typography.xl,
     fontWeight: typography.bold,
     color: colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: spacing.sm,
   },
   text: {
     ...typography.lg,
     color: colors.text,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: spacing.xl,
   },
   button: {
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xxl,
     borderRadius: layout.borderRadius.base,
     minWidth: 120,
-    alignItems: 'center',
+    alignItems: "center",
   },
   buttonText: {
     ...typography.base,
@@ -245,67 +245,67 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   chartContainer: {
-    width: '100%',
+    width: "100%",
     marginVertical: spacing.lg,
   },
   chartTitle: {
     ...typography.sm,
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: spacing.md,
   },
   chartWrapper: {
-    flexDirection: 'row',
+    flexDirection: "row",
     height: 180,
     marginBottom: spacing.md,
   },
   chart: {
     flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'flex-end',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "flex-end",
     paddingBottom: spacing.base,
   },
   chartItem: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
+    alignItems: "center",
+    justifyContent: "flex-end",
   },
   chartBarContainer: {
-    width: '100%',
+    width: "100%",
     height: 160,
-    position: 'relative',
-    alignItems: 'center',
+    position: "relative",
+    alignItems: "center",
   },
   chartPoint: {
-    position: 'absolute',
+    position: "absolute",
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#00C974',
+    backgroundColor: "#00C974",
     zIndex: 2,
   },
   chartLineHorizontal: {
-    position: 'absolute',
+    position: "absolute",
     height: 2,
-    backgroundColor: '#00C974',
+    backgroundColor: "#00C974",
     zIndex: 1,
   },
   chartLineVertical: {
-    position: 'absolute',
+    position: "absolute",
     width: 2,
-    backgroundColor: '#00C974',
+    backgroundColor: "#00C974",
     zIndex: 1,
   },
   chartXLabel: {
     ...typography.xs,
     color: colors.textSecondary,
     marginTop: spacing.xs,
-    textAlign: 'center',
+    textAlign: "center",
   },
   chartYLabels: {
     width: 50,
-    justifyContent: 'space-between',
+    justifyContent: "space-between",
     paddingBottom: spacing.base,
     paddingRight: spacing.sm,
   },
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
   chartSubtitle: {
     ...typography.sm,
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: spacing.md,
   },
 });

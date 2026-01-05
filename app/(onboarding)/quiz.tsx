@@ -10,7 +10,7 @@ export default function QuizScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const {
-    state,
+    state, 
     currentQuestion,
     totalSteps,
     hasNext,
@@ -28,10 +28,15 @@ export default function QuizScreen() {
 
   // Redirecionar quando quiz estiver completo
   useEffect(() => {
-    if (state.isComplete && !shouldShowMotivation) {
+  if (state.isComplete && !shouldShowMotivation) {
+    // Delay pequeno garante que o Modal já foi desmontado
+    const timeout = setTimeout(() => {
       router.replace('/(onboarding)/result');
-    }
-  }, [state.isComplete, shouldShowMotivation, router]);
+    }, 50);
+
+    return () => clearTimeout(timeout);
+  }
+}, [state.isComplete, shouldShowMotivation]);
 
   if (!currentQuestion) {
     return null;
@@ -51,9 +56,13 @@ export default function QuizScreen() {
     }
   };
 
-  const handleCloseMotivation = () => {
-    closeMotivation();
-  };
+const [closing, setClosing] = useState(false);
+
+const handleCloseMotivation = () => {
+  if (closing) return;
+  setClosing(true);
+  closeMotivation();
+};
 
   const progress = ((state.currentStep + 1) / totalSteps) * 100;
   const currentAnswer = state.answers[currentQuestion.id];
