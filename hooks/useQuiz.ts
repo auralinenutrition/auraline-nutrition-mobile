@@ -1,17 +1,13 @@
-import { useState, useCallback, useMemo } from "react";
-import {
-  QuizState,
-  QuizAnswer,
-  QuizMotivation,
-} from "@/types/quiz";
-import { QUIZ_QUESTIONS } from "./quiz.questions";
+import { useState, useCallback, useMemo } from 'react';
+import { QuizState, QuizAnswer } from '@/types/quiz';
+import { QUIZ_QUESTIONS } from './quiz.questions';
 
 export function useQuiz() {
   const [state, setState] = useState<QuizState>({
     currentStep: 0,
     answers: {},
     isComplete: false,
-    pendingMotivation: null,
+    pendingMotivation: null, // mantido apenas para compatibilidade
   });
 
   const currentQuestion = QUIZ_QUESTIONS[state.currentStep];
@@ -20,100 +16,34 @@ export function useQuiz() {
   const hasNext = state.currentStep < totalSteps - 1;
   const hasPrevious = state.currentStep > 0;
 
-  const currentAnswer =
-    currentQuestion ? state.answers[currentQuestion.id] : undefined;
+  const currentAnswer = state.answers[currentQuestion?.id];
+  const hasAnswer = currentAnswer !== undefined && currentAnswer !== null;
 
-  const hasAnswer =
-    currentAnswer !== undefined && currentAnswer !== null;
+  const isLastQuestion = state.currentStep === totalSteps - 1;
 
-  /**
-   * ⚠️ REGRA CRÍTICA
-   * Não permitir avanço enquanto Modal estiver aberto
-   */
-  const canGoNext = useMemo(() => {
-    return hasAnswer && !state.pendingMotivation && hasNext;
-  }, [hasAnswer, state.pendingMotivation, hasNext]);
+  const canGoNext = hasAnswer && hasNext;
+  const canComplete = hasAnswer && isLastQuestion;
 
-  const isLastQuestion = useMemo(() => {
-    return state.currentStep === totalSteps - 1;
-  }, [state.currentStep, totalSteps]);
+  const answerQuestion = useCallback((answer: QuizAnswer['answer']) => {
+    setState(prev => {
+      const currentQ = QUIZ_QUESTIONS[prev.currentStep];
 
-  const canComplete = useMemo(() => {
-    return (
-      isLastQuestion &&
-      hasAnswer &&
-      !state.pendingMotivation
-    );
-  }, [isLastQuestion, hasAnswer, state.pendingMotivation]);
+      return {
+        ...prev,
+        answers: {
+          ...prev.answers,
+          [currentQ.id]: answer,
+        },
+      };
+    });
+  }, []);
 
-  const shouldShowMotivation = useMemo(() => {
-    return state.pendingMotivation !== null;
-  }, [state.pendingMotivation]);
-
-  /**
-   * 🧠 SALVAR RESPOSTA
-   * ❌ NÃO abre motivação aqui
-   * ❌ NÃO navega aqui
-   */
-  const answerQuestion = useCallback(
-    (answer: QuizAnswer["answer"]) => {
-      setState((prev) => {
-        if (!QUIZ_QUESTIONS[prev.currentStep]) {
-          return prev;
-        }
-
-        const question = QUIZ_QUESTIONS[prev.currentStep];
-
-        return {
-          ...prev,
-          answers: {
-            ...prev.answers,
-            [question.id]: answer,
-          },
-        };
-      });
-    },
-    []
-  );
-
-  /**
-   * ▶️ AVANÇAR
-   * Aqui sim decidimos se existe motivação
-   */
   const goNext = useCallback(() => {
-    setState((prev) => {
-      const question = QUIZ_QUESTIONS[prev.currentStep];
-      if (!question) return prev;
-
-      // Se a pergunta tiver motivação, abre o overlay
-      let pendingMotivation: QuizMotivation | null = null;
-
-      if (question.motivation) {
-        pendingMotivation = question.motivation;
-      } else if (question.motivationText) {
-        pendingMotivation = {
-          title: "",
-          text: question.motivationText,
-        };
-      }
-
-      // Se houver motivação, NÃO avança ainda
-      if (pendingMotivation) {
-        return {
-          ...prev,
-          pendingMotivation,
-        };
-      }
-
-      // Última pergunta → apenas marca como completo
+    setState(prev => {
       if (prev.currentStep === totalSteps - 1) {
-        return {
-          ...prev,
-          isComplete: true,
-        };
+        return { ...prev, isComplete: true };
       }
 
-      // Avança normalmente
       return {
         ...prev,
         currentStep: prev.currentStep + 1,
@@ -121,37 +51,13 @@ export function useQuiz() {
     });
   }, [totalSteps]);
 
-  /**
-   * 🔙 VOLTAR
-   * Sempre fecha qualquer overlay
-   */
   const goToPrevious = useCallback(() => {
-    setState((prev) => {
-      if (prev.currentStep === 0) return prev;
-
-      return {
-        ...prev,
-        currentStep: prev.currentStep - 1,
-        pendingMotivation: null,
-      };
-    });
-  }, []);
-
-  /**
-   * ❌ FECHAR MOTIVAÇÃO
-   * ⚠️ NÃO navega
-   * ⚠️ NÃO finaliza
-   */
-  const closeMotivation = useCallback(() => {
-    setState((prev) => ({
+    setState(prev => ({
       ...prev,
-      pendingMotivation: null,
+      currentStep: Math.max(prev.currentStep - 1, 0),
     }));
   }, []);
 
-  /**
-   * 🔄 RESET TOTAL
-   */
   const reset = useCallback(() => {
     setState({
       currentStep: 0,
@@ -171,11 +77,9 @@ export function useQuiz() {
     canGoNext,
     canComplete,
     isLastQuestion,
-    shouldShowMotivation,
     answerQuestion,
     goNext,
     goToPrevious,
-    closeMotivation,
     reset,
   };
 }

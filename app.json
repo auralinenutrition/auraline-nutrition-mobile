@@ -3,35 +3,44 @@
     "name": "Auraline",
     "slug": "auraline-nutrition-mobile",
     "version": "1.0.0",
+
     "orientation": "portrait",
     "scheme": "auraline",
+
     "icon": "./assets/icon.png",
+
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+
     "android": {
       "package": "com.auraline.nutrition",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "jsEngine": "hermes"
+      "jsEngine": "hermes",
+      "newArchEnabled": true
     },
+
+    "ios": {
+      "bundleIdentifier": "com.auraline.nutrition",
+      "newArchEnabled": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+
     "plugins": [
       "expo-router"
     ],
+
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "5e1ec398-eadc-456a-853d-41c811cffb72"
-      }
-    },
-    "ios": {
-      "bundleIdentifier": "com.auraline.nutrition",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "projectId": "SEU_PROJECT_ID_AQUI"
       }
     }
   }
