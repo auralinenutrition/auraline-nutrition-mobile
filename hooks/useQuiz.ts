@@ -1,7 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import {
   QuizState,
-  QuizQuestion,
   QuizAnswer,
   QuizMotivation,
 } from "@/types/quiz";
@@ -17,112 +16,142 @@ export function useQuiz() {
 
   const currentQuestion = QUIZ_QUESTIONS[state.currentStep];
   const totalSteps = QUIZ_QUESTIONS.length;
+
   const hasNext = state.currentStep < totalSteps - 1;
   const hasPrevious = state.currentStep > 0;
-  const currentAnswer = state.answers[currentQuestion?.id];
-  const hasAnswer = currentAnswer !== undefined && currentAnswer !== null;
 
-  // Pode avançar apenas se tiver resposta e não houver motivação pendente
+  const currentAnswer =
+    currentQuestion ? state.answers[currentQuestion.id] : undefined;
+
+  const hasAnswer =
+    currentAnswer !== undefined && currentAnswer !== null;
+
+  /**
+   * ⚠️ REGRA CRÍTICA
+   * Não permitir avanço enquanto Modal estiver aberto
+   */
   const canGoNext = useMemo(() => {
     return hasAnswer && !state.pendingMotivation && hasNext;
   }, [hasAnswer, state.pendingMotivation, hasNext]);
 
-  // Deve mostrar motivação se houver uma pendente
-  const shouldShowMotivation = useMemo(() => {
-    return state.pendingMotivation !== null;
-  }, [state.pendingMotivation]);
-
-  // É a última pergunta
   const isLastQuestion = useMemo(() => {
     return state.currentStep === totalSteps - 1;
   }, [state.currentStep, totalSteps]);
 
-  // Pode finalizar se última pergunta foi respondida e não há motivação pendente
   const canComplete = useMemo(() => {
-    return isLastQuestion && hasAnswer && !state.pendingMotivation;
+    return (
+      isLastQuestion &&
+      hasAnswer &&
+      !state.pendingMotivation
+    );
   }, [isLastQuestion, hasAnswer, state.pendingMotivation]);
 
-  // Apenas salva a resposta, não avança
-  const answerQuestion = useCallback((answer: QuizAnswer["answer"]) => {
-    setState((prev: QuizState) => {
-      const currentQ = QUIZ_QUESTIONS[prev.currentStep];
-      const newAnswers = {
-        ...prev.answers,
-        [currentQ.id]: answer,
-      };
+  const shouldShowMotivation = useMemo(() => {
+    return state.pendingMotivation !== null;
+  }, [state.pendingMotivation]);
 
-      // Se a pergunta tem motivação, prepara para mostrar
-      // Converte motivationText em motivation se necessário
+  /**
+   * 🧠 SALVAR RESPOSTA
+   * ❌ NÃO abre motivação aqui
+   * ❌ NÃO navega aqui
+   */
+  const answerQuestion = useCallback(
+    (answer: QuizAnswer["answer"]) => {
+      setState((prev) => {
+        if (!QUIZ_QUESTIONS[prev.currentStep]) {
+          return prev;
+        }
+
+        const question = QUIZ_QUESTIONS[prev.currentStep];
+
+        return {
+          ...prev,
+          answers: {
+            ...prev.answers,
+            [question.id]: answer,
+          },
+        };
+      });
+    },
+    []
+  );
+
+  /**
+   * ▶️ AVANÇAR
+   * Aqui sim decidimos se existe motivação
+   */
+  const goNext = useCallback(() => {
+    setState((prev) => {
+      const question = QUIZ_QUESTIONS[prev.currentStep];
+      if (!question) return prev;
+
+      // Se a pergunta tiver motivação, abre o overlay
       let pendingMotivation: QuizMotivation | null = null;
-      if (currentQ.motivation) {
-        pendingMotivation = currentQ.motivation;
-      } else if (currentQ.motivationText) {
-        // Converte motivationText simples em QuizMotivation
+
+      if (question.motivation) {
+        pendingMotivation = question.motivation;
+      } else if (question.motivationText) {
         pendingMotivation = {
           title: "",
-          text: currentQ.motivationText,
+          text: question.motivationText,
         };
       }
 
-      return {
-        ...prev,
-        answers: newAnswers,
-        pendingMotivation,
-      };
-    });
-  }, []);
-
-  // Avança para próxima pergunta
-  const goNext = useCallback(() => {
-    if (!canGoNext) return;
-
-    setState((prev: QuizState) => {
-      const isLastStep = prev.currentStep === totalSteps - 1;
-
-      return {
-        ...prev,
-        currentStep: isLastStep ? prev.currentStep : prev.currentStep + 1,
-        isComplete: isLastStep,
-        pendingMotivation: null,
-      };
-    });
-  }, [canGoNext, totalSteps]);
-
-  // Volta para pergunta anterior
-  const goToPrevious = useCallback(() => {
-    if (!hasPrevious) return;
-
-    setState((prev: QuizState) => ({
-      ...prev,
-      currentStep: prev.currentStep - 1,
-      pendingMotivation: null,
-    }));
-  }, [hasPrevious]);
-
-  // Fecha motivação e avança se possível
-  const closeMotivation = useCallback(() => {
-    setState((prev: QuizState) => {
-      const isLastStep = prev.currentStep === totalSteps - 1;
-      const hasAnswer =
-        prev.answers[QUIZ_QUESTIONS[prev.currentStep]?.id] !== undefined;
-
-      // Se for última pergunta e tiver resposta, marca como completo
-      if (isLastStep && hasAnswer) {
+      // Se houver motivação, NÃO avança ainda
+      if (pendingMotivation) {
         return {
           ...prev,
-          pendingMotivation: null,
+          pendingMotivation,
+        };
+      }
+
+      // Última pergunta → apenas marca como completo
+      if (prev.currentStep === totalSteps - 1) {
+        return {
+          ...prev,
           isComplete: true,
         };
       }
 
-      // Caso contrário, apenas fecha motivação
+      // Avança normalmente
       return {
         ...prev,
-        pendingMotivation: null,
+        currentStep: prev.currentStep + 1,
       };
     });
   }, [totalSteps]);
 
+  /**
+   * 🔙 VOLTAR
+   * Sempre fecha qualquer overlay
+   */
+  const goToPrevious = useCallback(() => {
+    setState((prev) => {
+      if (prev.currentStep === 0) return prev;
+
+      return {
+        ...prev,
+        currentStep: prev.currentStep - 1,
+        pendingMotivation: null,
+      };
+    });
+  }, []);
+
+  /**
+   * ❌ FECHAR MOTIVAÇÃO
+   * ⚠️ NÃO navega
+   * ⚠️ NÃO finaliza
+   */
+  const closeMotivation = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      pendingMotivation: null,
+    }));
+  }, []);
+
+  /**
+   * 🔄 RESET TOTAL
+   */
   const reset = useCallback(() => {
     setState({
       currentStep: 0,
@@ -140,9 +169,9 @@ export function useQuiz() {
     hasPrevious,
     hasAnswer,
     canGoNext,
-    shouldShowMotivation,
-    isLastQuestion,
     canComplete,
+    isLastQuestion,
+    shouldShowMotivation,
     answerQuestion,
     goNext,
     goToPrevious,
