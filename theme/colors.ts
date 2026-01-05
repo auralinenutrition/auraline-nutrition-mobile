@@ -1,13 +1,13 @@
 export const colors = {
   // Cores primárias
-  primary: '#34C759',
-  primaryDark: '#0051D5',
+  primary: '#00c758',
+  primaryDark: '#00a544',
   primaryLight: '#5AC8FA',
   
   // Cores de texto
-  text: '#1a1a1a',
-  textSecondary: '#666666',
-  textTertiary: '#999999',
+  text: '#ffffff',
+  textSecondary: '#000000',
+  textTertiary: '#000000',
   
   // Cores de fundo
   white: '#ffffff',
