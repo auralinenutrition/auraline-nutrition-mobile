@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { QuizState, QuizAnswer } from '@/types/quiz';
+import { QuizState, QuizAnswerValue } from '@/types/quiz';
 import { QUIZ_QUESTIONS } from './quiz.questions';
 
 export function useQuiz() {
@@ -24,7 +24,7 @@ export function useQuiz() {
   const canGoNext = hasAnswer && hasNext;
   const canComplete = hasAnswer && isLastQuestion;
 
-  const answerQuestion = useCallback((answer: QuizAnswer['answer']) => {
+  const answerQuestion = useCallback((answer: QuizAnswerValue) => {
     setState(prev => {
       const currentQ = QUIZ_QUESTIONS[prev.currentStep];
 

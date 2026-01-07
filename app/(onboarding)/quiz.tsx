@@ -1,10 +1,14 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useEffect } from 'react';
-import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useEffect } from "react";
+import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useQuiz } from '@/hooks/useQuiz';
-import { colors, spacing, typography, layout } from '@/theme';
+import { useQuiz } from "@/hooks/useQuiz";
+import BirthDateQuestion from "./questions/BirthDate";
+import HeightQuestion from "./questions/Height";
+import WeightQuestion from "./questions/Weight";
+import TargetWeightQuestion from "./questions/TargetWeight";
+import { colors, spacing, typography, layout } from "@/theme";
 
 export default function QuizScreen() {
   const router = useRouter();
@@ -24,20 +28,19 @@ export default function QuizScreen() {
     goToPrevious,
   } = useQuiz();
 
-  // 🔁 Redirect automático ao finalizar
   useEffect(() => {
     if (state.isComplete) {
-      router.replace('/(onboarding)/result');
+      router.replace("/(onboarding)/result");
     }
   }, [state.isComplete, router]);
 
-  if (!currentQuestion) {
-    return null;
-  }
+  if (!currentQuestion) return null;
+
+  const progress = (state.currentStep + 1) / totalSteps;
 
   const handleContinue = () => {
     if (canComplete) {
-      router.replace('/(onboarding)/result');
+      router.replace("/(onboarding)/result");
     } else if (canGoNext) {
       goNext();
     }
@@ -45,65 +48,115 @@ export default function QuizScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
+      {/* HEADER */}
       <View style={styles.header}>
-        {hasPrevious && (
-          <TouchableOpacity onPress={goToPrevious}>
-            <Text style={styles.backText}>Voltar</Text>
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity
+          onPress={() => {
+            if (state.currentStep === 0) {
+              router.replace("/");
+            } else {
+              goToPrevious();
+            }
+          }}
+          activeOpacity={0.7}
+          style={styles.backButton}
+        >
+          <Text style={styles.backArrow}>←</Text>
+        </TouchableOpacity>
 
-        <Text style={styles.stepText}>
-          {state.currentStep + 1} / {totalSteps}
-        </Text>
-      </View>
-
-      {/* Pergunta */}
-      <View style={styles.content}>
-        <Text style={styles.question}>
-          {currentQuestion.question}
-        </Text>
-
-        {/* Opções */}
-        <View style={styles.answers}>
-          {currentQuestion.options?.map((option) => {
-            const selected =
-              state.answers[currentQuestion.id] === option;
-
-            return (
-              <TouchableOpacity
-                key={option}
-                style={[
-                  styles.option,
-                  selected && styles.optionSelected,
-                ]}
-                activeOpacity={0.8}
-                onPress={() => answerQuestion(option)}
-              >
-                <Text
-                  style={[
-                    styles.optionText,
-                    selected && styles.optionTextSelected,
-                  ]}
-                >
-                  {option}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+        <View style={styles.progressContainer}>
+          <View style={styles.progressTrack}>
+            <View
+              style={[styles.progressBar, { width: `${progress * 100}%` }]}
+            />
+          </View>
         </View>
       </View>
 
-      {/* Botão Continue */}
+      {/* CONTEÚDO */}
+      <View style={styles.content}>
+        {/* PERGUNTAS ESPECIAIS */}
+        {currentQuestion.type === "date" && (
+          <BirthDateQuestion
+            value={state.answers[currentQuestion.id]}
+            onChange={(date) => answerQuestion(date)}
+          />
+        )}
+
+        {currentQuestion.type === "number" && currentQuestion.unit === "cm" && (
+          <HeightQuestion
+            value={state.answers[currentQuestion.id]}
+            onChange={(value) => answerQuestion(value)}
+          />
+        )}
+
+        {currentQuestion.type === "number" &&
+          currentQuestion.unit === "kg" &&
+          currentQuestion.id === "12" && (
+            <WeightQuestion
+              value={state.answers[currentQuestion.id]}
+              onChange={(value) => answerQuestion(value)}
+            />
+          )}
+
+        {currentQuestion.type === "number" &&
+          currentQuestion.unit === "kg" &&
+          currentQuestion.id === "13" && (
+            <TargetWeightQuestion
+              currentWeight={state.answers["12"]}
+              value={state.answers[currentQuestion.id]}
+              onChange={(value) => answerQuestion(value)}
+            />
+          )}
+
+        {/* PERGUNTAS PADRÃO */}
+        {(currentQuestion.type === "single" ||
+          currentQuestion.type === "multiple") && (
+          <>
+            <Text style={styles.question}>{currentQuestion.question}</Text>
+
+            <View style={styles.answers}>
+              {currentQuestion.options?.map((option) => {
+                const selected =
+                  currentQuestion.type === "multiple"
+                    ? state.answers[currentQuestion.id]?.includes(option)
+                    : state.answers[currentQuestion.id] === option;
+
+                return (
+                  <TouchableOpacity
+                    key={option}
+                    style={[styles.option, selected && styles.optionSelected]}
+                    activeOpacity={0.85}
+                    onPress={() => answerQuestion(option)}
+                  >
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selected && styles.optionTextSelected,
+                      ]}
+                    >
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </>
+        )}
+      </View>
+
+      {/* CTA */}
       {hasAnswer && (canGoNext || canComplete) && (
-        <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+        <View
+          style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}
+        >
           <TouchableOpacity
             style={styles.continueButton}
             activeOpacity={0.9}
             onPress={handleContinue}
           >
             <Text style={styles.continueText}>
-              {isLastQuestion ? 'Finalizar' : 'Continuar'}
+              {isLastQuestion ? "Finalizar" : "Continuar"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -118,35 +171,61 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
 
+  /* HEADER */
   header: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
 
-  backText: {
-    ...typography.sm,
-    color: colors.primary,
+  backButton: {
+    width: 32,
+    height: 32,
+    justifyContent: "center",
+    alignItems: "center",
   },
 
-  stepText: {
-    ...typography.sm,
+  backArrow: {
+    fontSize: 20,
     color: colors.textSecondary,
   },
 
+  backPlaceholder: {
+    width: 32,
+  },
+
+  progressContainer: {
+    flex: 1,
+    marginLeft: spacing.sm,
+  },
+
+  progressTrack: {
+    height: 4,
+    backgroundColor: colors.borderLight,
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+
+  progressBar: {
+    height: 4,
+    backgroundColor: colors.primary,
+    borderRadius: 4,
+  },
+
+  /* CONTENT */
   content: {
     flex: 1,
     paddingHorizontal: spacing.lg,
-    justifyContent: 'center',
+    paddingTop: spacing.xl,
   },
 
   question: {
-    ...typography.xl,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: spacing.xl,
+    fontSize: 30,
+    lineHeight: 30,
+    fontWeight: "500",
+    color: colors.textPrimary,
+    marginBottom: 58,
   },
 
   answers: {
@@ -160,7 +239,6 @@ const styles = StyleSheet.create({
     borderRadius: layout.borderRadius.base,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-    alignItems: 'center',
   },
 
   optionSelected: {
@@ -170,13 +248,14 @@ const styles = StyleSheet.create({
 
   optionText: {
     ...typography.base,
-    color: colors.textSecondary,
+    color: colors.textPrimary,
   },
 
   optionTextSelected: {
     color: colors.primaryDark,
   },
 
+  /* FOOTER */
   footer: {
     paddingHorizontal: spacing.lg,
   },
@@ -185,7 +264,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: layout.borderRadius.base,
     paddingVertical: spacing.md + 4,
-    alignItems: 'center',
+    alignItems: "center",
   },
 
   continueText: {
@@ -193,4 +272,3 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
 });
-

@@ -1,7 +1,7 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, typography, layout } from '@/theme';
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { colors, spacing, typography, layout } from "@/theme";
 
 export default function LandingScreen() {
   const router = useRouter();
@@ -10,27 +10,28 @@ export default function LandingScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.content}>
-        <Text style={styles.title}>Auraline Nutrition</Text>
+        <Text style={styles.auraline}>Auraline</Text>
+        <Text style={styles.title}>Nutrition</Text>
         <Text style={styles.subtitle}>
-          Descubra seu plano nutricional personalizado
+          Seu guia personalizado para uma vida mais saudável.
         </Text>
       </View>
 
       <View style={[styles.actions, { paddingBottom: insets.bottom + 20 }]}>
         <TouchableOpacity
           style={styles.primaryButton}
-          onPress={() => router.push('/(onboarding)/quiz')}
+          onPress={() => router.push("/(onboarding)/quiz")}
           activeOpacity={0.8}
         >
-          <Text style={styles.primaryButtonText}>Iniciar Quiz</Text>
+          <Text style={styles.primaryButtonText}>Vamos começar</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.secondaryButton}
-          onPress={() => router.push('/(auth)/login')}
+          onPress={() => router.push("/(auth)/login")}
           activeOpacity={0.8}
         >
-          <Text style={styles.secondaryButtonText}>Entrar / Login</Text>
+          <Text style={styles.secondaryButtonText}>Já possuo cadastro</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -45,23 +46,32 @@ const styles = StyleSheet.create({
 
   content: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xl,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: spacing.xs,
+  },
+
+  auraline: {
+    ...typography.special,
+    fontSize: 54,
+    color: colors.textPrimary,
+    fontWeight: "bold",
+    textAlign: "center",
   },
 
   title: {
     ...typography.xl,
-    fontSize: 32,
-    color: colors.textSecondary,
+    fontSize: 58,
+    color: colors.textPrimary,
     marginBottom: spacing.sm,
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
   },
 
   subtitle: {
-    ...typography.base,
+    ...typography.lg,
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 24,
   },
 
@@ -73,28 +83,28 @@ const styles = StyleSheet.create({
   primaryButton: {
     backgroundColor: colors.primary,
     paddingVertical: spacing.md + 4,
-    borderRadius: layout.borderRadius.base,
-    alignItems: 'center',
+    borderRadius: layout.borderRadius.xl,
+    alignItems: "center",
   },
 
   primaryButtonText: {
     ...typography.base,
+    fontWeight: "bold",
     color: colors.white,
   },
 
   secondaryButton: {
-    backgroundColor: 'transparent',
+    backgroundColor: "transparent",
     paddingVertical: spacing.md + 4,
-    borderRadius: layout.borderRadius.base,
-    alignItems: 'center',
+    borderRadius: layout.borderRadius.xl,
+    alignItems: "center",
     borderWidth: 1,
     borderColor: colors.primary,
   },
 
   secondaryButtonText: {
     ...typography.base,
+    fontWeight: "bold",
     color: colors.primary,
   },
 });
-
-

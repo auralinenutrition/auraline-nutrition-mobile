@@ -16,7 +16,11 @@ export const typography = {
     lineHeight: 26,
   },
   xl: {
-    fontSize: 24,
-    lineHeight: 32,
+    fontSize: 42,
+    lineHeight: 56,
   },
+  special: {
+    fontSize: 54,
+    lineHeight: 54,
+  }
 } as const;
