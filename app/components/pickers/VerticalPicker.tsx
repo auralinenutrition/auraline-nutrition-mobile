@@ -58,6 +58,7 @@ export function VerticalPicker<T>({
       <View style={styles.fadeTop} />
 
       <Animated.FlatList
+        style={{ zIndex: 2 }}
         ref={listRef}
         data={data}
         keyExtractor={(_, index) => String(index)}
@@ -186,10 +187,11 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: "55%",
+    height: "40%",
     backgroundColor: colors.background,
-    opacity: 0.96,
+    opacity: 0.85,
     zIndex: 1,
+    pointerEvents: "none",
   },
 
   fadeBottom: {
@@ -197,9 +199,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: "55%",
+    height: "40%",
     backgroundColor: colors.background,
-    opacity: 0.96,
+    opacity: 0.85,
     zIndex: 1,
+    pointerEvents: "none",
   },
 });
