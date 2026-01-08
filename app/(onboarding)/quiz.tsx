@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useQuiz } from "@/hooks/useQuiz";
+import { useQuiz } from "@/hooks/QuizContext";
 import BirthDateQuestion from "./questions/BirthDate";
 import HeightQuestion from "./questions/Height";
 import WeightQuestion from "./questions/Weight";
@@ -74,7 +74,7 @@ export default function QuizScreen() {
       </View>
 
       {/* CONTEÚDO */}
-      <View style={styles.content}>
+      <View key={currentQuestion.id} style={styles.content}>
         {/* PERGUNTAS ESPECIAIS */}
         {currentQuestion.type === "date" && (
           <BirthDateQuestion

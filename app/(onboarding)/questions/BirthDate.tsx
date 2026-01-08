@@ -1,7 +1,8 @@
 import { View, Text, StyleSheet } from "react-native";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { colors, spacing, typography } from "@/theme";
-import { VerticalPicker } from "@/app/components/pickers/VerticalPicker";
+import { VerticalPicker } from "@/components/pickers/VerticalPicker";
+
 
 type BirthDateProps = {
   value?: Date;
@@ -9,52 +10,33 @@ type BirthDateProps = {
 };
 
 const MONTHS = [
-  "Janeiro",
-  "Fevereiro",
-  "Março",
-  "Abril",
-  "Maio",
-  "Junho",
-  "Julho",
-  "Agosto",
-  "Setembro",
-  "Outubro",
-  "Novembro",
-  "Dezembro",
+  "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
+  "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro",
 ];
 
 export default function BirthDateQuestion({ value, onChange }: BirthDateProps) {
-  const today = new Date();
-
   const safeDate =
     value instanceof Date && !isNaN(value.getTime())
       ? value
       : new Date(2000, 0, 1);
 
-  const [day, setDay] = useState(safeDate.getDate());
-  const [month, setMonth] = useState(safeDate.getMonth());
-  const [year, setYear] = useState(safeDate.getFullYear());
+  const day = safeDate.getDate();
+  const month = safeDate.getMonth();
+  const year = safeDate.getFullYear();
 
   const years = useMemo(() => {
-    const currentYear = today.getFullYear();
+    const currentYear = new Date().getFullYear();
     return Array.from({ length: 100 }, (_, i) => currentYear - i);
-  }, [today]);
+  }, []);
 
   const daysInMonth = useMemo(() => {
     return new Date(year, month + 1, 0).getDate();
   }, [year, month]);
 
-  const days = useMemo(() => {
-    return Array.from({ length: daysInMonth }, (_, i) => i + 1);
-  }, [daysInMonth]);
-
-  useEffect(() => {
-    if (value instanceof Date && !isNaN(value.getTime())) {
-      setDay(value.getDate());
-      setMonth(value.getMonth());
-      setYear(value.getFullYear());
-    }
-  }, [value]);
+  const days = useMemo(
+    () => Array.from({ length: daysInMonth }, (_, i) => i + 1),
+    [daysInMonth]
+  );
 
   return (
     <View style={styles.container}>
@@ -68,29 +50,20 @@ export default function BirthDateQuestion({ value, onChange }: BirthDateProps) {
         <VerticalPicker
           data={days}
           value={day}
-          onChange={(d) => {
-            setDay(d);
-            onChange(new Date(year, month, d));
-          }}
+          onChange={(d) => onChange(new Date(year, month, d))}
         />
 
         <VerticalPicker
           data={MONTHS.map((_, i) => i)}
           value={month}
-          onChange={(m) => {
-            setMonth(m);
-            onChange(new Date(year, m, day));
-          }}
+          onChange={(m) => onChange(new Date(year, m, day))}
           renderLabel={(m) => MONTHS[m]}
         />
 
         <VerticalPicker
           data={years}
           value={year}
-          onChange={(y) => {
-            setYear(y);
-            onChange(new Date(y, month, day));
-          }}
+          onChange={(y) => onChange(new Date(y, month, day))}
         />
       </View>
     </View>

@@ -1,7 +1,8 @@
 import { View, Text, StyleSheet } from "react-native";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import { colors, spacing, typography } from "@/theme";
-import { VerticalPicker } from "@/app/components/pickers/VerticalPicker";
+import { VerticalPicker } from "@/components/pickers/VerticalPicker";
+
 
 type HeightQuestionProps = {
   value?: number;
@@ -12,41 +13,25 @@ export default function HeightQuestion({
   value,
   onChange,
 }: HeightQuestionProps) {
-  // Intervalo realista de altura
   const heights = useMemo(() => {
     const list: number[] = [];
-    for (let h = 130; h <= 220; h++) {
-      list.push(h);
-    }
+    for (let h = 130; h <= 220; h++) list.push(h);
     return list;
   }, []);
 
-  const [height, setHeight] = useState(value ?? 170);
-
-  useEffect(() => {
-  if (typeof value === 'number') {
-    setHeight(value);
-  }
-}, [value]);
-
   return (
     <View style={styles.container}>
-      {/* Pergunta */}
       <Text style={styles.title}>Qual é a sua altura?</Text>
 
       <Text style={styles.subtitle}>
         Usamos essa informação para ajustar suas metas nutricionais
       </Text>
 
-      {/* Picker */}
       <View style={styles.pickerContainer}>
         <VerticalPicker
           data={heights}
-          value={height}
-          onChange={(h) => {
-            setHeight(h);
-            onChange(h);
-          }}
+          value={value ?? 170}
+          onChange={onChange}
           renderLabel={(h) => `${h} cm`}
         />
       </View>
@@ -59,7 +44,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
   },
-
   title: {
     fontSize: 22,
     lineHeight: 30,
@@ -67,13 +51,11 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: spacing.sm,
   },
-
   subtitle: {
     ...typography.base,
     color: colors.textSecondary,
     marginBottom: spacing.xl,
   },
-
   pickerContainer: {
     alignItems: "center",
   },

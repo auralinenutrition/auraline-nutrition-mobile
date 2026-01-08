@@ -1,10 +1,10 @@
 import { View, Text, StyleSheet } from "react-native";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import { colors, spacing, typography } from "@/theme";
-import { HorizontalPicker } from "@/app/components/pickers/HorizontalPicker";
+import { HorizontalPicker } from "@/components/pickers/HorizontalPicker";
 
 type TargetWeightProps = {
-  currentWeight: number; // peso atual para cálculo da diferença
+  currentWeight: number;
   value?: number;
   onChange: (weight: number) => void;
 };
@@ -22,9 +22,9 @@ export default function TargetWeightQuestion({
     return list;
   }, []);
 
-  const [target, setTarget] = useState<number>(value ?? currentWeight);
+  const effectiveTarget = value ?? currentWeight;
+  const diff = Number((effectiveTarget - currentWeight).toFixed(1));
 
-  const diff = Number((target - currentWeight).toFixed(1));
   const diffText =
     diff === 0
       ? "Manter o peso atual"
@@ -34,27 +34,21 @@ export default function TargetWeightQuestion({
 
   return (
     <View style={styles.container}>
-      {/* Pergunta */}
       <Text style={styles.title}>Qual é o peso que você deseja alcançar?</Text>
 
       <Text style={styles.subtitle}>
         Ajustamos o plano com base no seu objetivo
       </Text>
 
-      {/* Valor em destaque */}
       <View style={styles.valueBox}>
-        <Text style={styles.value}>{target.toFixed(1)} kg</Text>
+        <Text style={styles.value}>{effectiveTarget.toFixed(1)} kg</Text>
         <Text style={styles.diff}>{diffText}</Text>
       </View>
 
-      {/* Picker horizontal */}
       <HorizontalPicker
         data={weights}
-        value={target}
-        onChange={(v) => {
-          setTarget(v);
-          onChange(v);
-        }}
+        value={effectiveTarget}
+        onChange={onChange}
         renderLabel={(w) => w.toFixed(1)}
       />
     </View>
@@ -66,7 +60,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
   },
-
   title: {
     fontSize: 22,
     lineHeight: 30,
@@ -74,25 +67,21 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: spacing.sm,
   },
-
   subtitle: {
     ...typography.base,
     color: colors.textSecondary,
     marginBottom: spacing.xl,
   },
-
   valueBox: {
     alignItems: "center",
     marginBottom: spacing.xl,
   },
-
   value: {
     fontSize: 32,
     fontWeight: "600",
     color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
-
   diff: {
     ...typography.base,
     color: colors.primary,
