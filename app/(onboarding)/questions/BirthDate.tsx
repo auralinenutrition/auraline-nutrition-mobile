@@ -3,7 +3,6 @@ import { useMemo } from "react";
 import { colors, spacing, typography } from "@/theme";
 import { VerticalPicker } from "@/components/pickers/VerticalPicker";
 
-
 type BirthDateProps = {
   value?: Date;
   onChange: (date: Date) => void;
@@ -14,15 +13,16 @@ const MONTHS = [
   "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro",
 ];
 
-export default function BirthDateQuestion({ value, onChange }: BirthDateProps) {
-  const safeDate =
-    value instanceof Date && !isNaN(value.getTime())
-      ? value
-      : new Date(2000, 0, 1);
+export default function BirthDateQuestion({
+  value,
+  onChange,
+}: BirthDateProps) {
+  // ✅ valor inicial APENAS se não houver resposta
+  const date = value ?? new Date(2017, 0, 1);
 
-  const day = safeDate.getDate();
-  const month = safeDate.getMonth();
-  const year = safeDate.getFullYear();
+  const day = date.getDate();
+  const month = date.getMonth();
+  const year = date.getFullYear();
 
   const years = useMemo(() => {
     const currentYear = new Date().getFullYear();
@@ -38,10 +38,20 @@ export default function BirthDateQuestion({ value, onChange }: BirthDateProps) {
     [daysInMonth]
   );
 
+  /**
+   * 🔥 Função segura para alterar apenas parte da data
+   */
+  const updateDate = (newValues: Partial<{ day: number; month: number; year: number }>) => {
+    const newDay = newValues.day ?? day;
+    const newMonth = newValues.month ?? month;
+    const newYear = newValues.year ?? year;
+
+    onChange(new Date(newYear, newMonth, newDay));
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Qual é a sua data de nascimento?</Text>
-
       <Text style={styles.subtitle}>
         Isso nos ajuda a personalizar seu plano com mais precisão
       </Text>
@@ -50,20 +60,20 @@ export default function BirthDateQuestion({ value, onChange }: BirthDateProps) {
         <VerticalPicker
           data={days}
           value={day}
-          onChange={(d) => onChange(new Date(year, month, d))}
+          onChange={(d) => updateDate({ day: d })}
         />
 
         <VerticalPicker
           data={MONTHS.map((_, i) => i)}
           value={month}
-          onChange={(m) => onChange(new Date(year, m, day))}
+          onChange={(m) => updateDate({ month: m })}
           renderLabel={(m) => MONTHS[m]}
         />
 
         <VerticalPicker
           data={years}
           value={year}
-          onChange={(y) => onChange(new Date(y, month, day))}
+          onChange={(y) => updateDate({ year: y })}
         />
       </View>
     </View>
@@ -77,8 +87,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    lineHeight: 30,
-    fontWeight: "500",
+    fontWeight: "600",
     color: colors.textPrimary,
     marginBottom: spacing.sm,
   },

@@ -19,6 +19,9 @@ export default function HeightQuestion({
     return list;
   }, []);
 
+  // ✅ fallback só se NÃO houver resposta
+  const heightValue = value === undefined ? 170 : value;
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Qual é a sua altura?</Text>
@@ -30,7 +33,7 @@ export default function HeightQuestion({
       <View style={styles.pickerContainer}>
         <VerticalPicker
           data={heights}
-          value={value ?? 170}
+          value={heightValue}
           onChange={onChange}
           renderLabel={(h) => `${h} cm`}
         />
@@ -38,6 +41,7 @@ export default function HeightQuestion({
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

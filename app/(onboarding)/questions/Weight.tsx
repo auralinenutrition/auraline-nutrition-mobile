@@ -19,6 +19,9 @@ export default function WeightQuestion({
     return list;
   }, []);
 
+  // ✅ fallback só se NÃO houver resposta
+  const weightValue = value === undefined ? 70 : value;
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Qual é o seu peso atual?</Text>
@@ -30,7 +33,7 @@ export default function WeightQuestion({
       <View style={styles.pickerContainer}>
         <VerticalPicker
           data={weights}
-          value={value ?? 70}
+          value={weightValue}
           onChange={onChange}
           renderLabel={(w) => `${w} kg`}
         />
@@ -38,6 +41,7 @@ export default function WeightQuestion({
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

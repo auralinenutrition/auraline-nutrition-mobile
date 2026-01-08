@@ -6,7 +6,8 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from "react-native";
-import { useEffect, useRef } from "react";
+import { useRef, useCallback } from "react";
+import { useFocusEffect } from "expo-router";
 import { colors, spacing, typography } from "@/theme";
 
 type HorizontalPickerProps<T> = {
@@ -18,6 +19,8 @@ type HorizontalPickerProps<T> = {
 };
 
 const DEFAULT_ITEM_WIDTH = 72;
+const VISIBLE_ITEMS = 5;
+const CENTER_OFFSET = Math.floor(VISIBLE_ITEMS / 2);
 
 export function HorizontalPicker<T>({
   data,
@@ -27,28 +30,50 @@ export function HorizontalPicker<T>({
   renderLabel = (item) => String(item),
 }: HorizontalPickerProps<T>) {
   const scrollRef = useRef<ScrollView>(null);
-  const selectedIndex = data.findIndex((i) => i === value);
 
-  useEffect(() => {
-    if (selectedIndex >= 0) {
-      scrollRef.current?.scrollTo({
-        x: selectedIndex * itemWidth,
-        animated: false,
-      });
+  const selectedIndex = data.findIndex((item) => item === value);
+
+  /**
+   * 🔥 REPOSICIONA SEMPRE QUE A TELA VOLTA AO FOCO
+   */
+  useFocusEffect(
+    useCallback(() => {
+      if (selectedIndex >= 0) {
+        const offset = (selectedIndex - CENTER_OFFSET) * itemWidth;
+
+        requestAnimationFrame(() => {
+          scrollRef.current?.scrollTo({
+            x: Math.max(0, offset),
+            animated: false,
+          });
+        });
+      }
+    }, [selectedIndex, itemWidth])
+  );
+
+  const onMomentumEnd = (
+    e: NativeSyntheticEvent<NativeScrollEvent>
+  ) => {
+    const offsetX = e.nativeEvent.contentOffset.x;
+    const index =
+      Math.round(offsetX / itemWidth) + CENTER_OFFSET;
+
+    const selectedItem = data[index];
+    if (selectedItem !== undefined) {
+      onChange(selectedItem);
     }
-  }, [selectedIndex, itemWidth]);
-
-  const onMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const x = e.nativeEvent.contentOffset.x;
-    const index = Math.round(x / itemWidth);
-    const item = data[index];
-    if (item !== undefined) onChange(item);
   };
 
   return (
     <View style={styles.container}>
-      {/* indicador central */}
-      <View style={[styles.centerIndicator, { width: itemWidth }]} />
+      {/* Indicador central */}
+      <View
+        pointerEvents="none"
+        style={[
+          styles.centerIndicator,
+          { width: itemWidth },
+        ]}
+      />
 
       <ScrollView
         ref={scrollRef}
@@ -58,17 +83,20 @@ export function HorizontalPicker<T>({
         decelerationRate="fast"
         onMomentumScrollEnd={onMomentumEnd}
         contentContainerStyle={{
-          paddingHorizontal: itemWidth * 2,
+          paddingHorizontal: itemWidth * CENTER_OFFSET,
         }}
       >
-        {data.map((item, idx) => {
-          const selected = item === value;
+        {data.map((item, index) => {
+          const isSelected = item === value;
+
           return (
-            <View key={idx} style={[styles.item, { width: itemWidth }]}>
+            <View key={index} style={[styles.item, { width: itemWidth }]}>
               <Text
                 style={[
                   styles.text,
-                  selected ? styles.textSelected : styles.textInactive,
+                  isSelected
+                    ? styles.textSelected
+                    : styles.textInactive,
                 ]}
               >
                 {renderLabel(item)}
@@ -83,33 +111,28 @@ export function HorizontalPicker<T>({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
-    alignItems: 'center',
+    position: "relative",
+    alignItems: "center",
     marginVertical: spacing.lg,
   },
-
   item: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
-
   text: {
     ...typography.base,
   },
-
   textSelected: {
     fontSize: 22,
-    fontWeight: '600',
+    fontWeight: "600",
     color: colors.textPrimary,
   },
-
   textInactive: {
     color: colors.textTertiary,
     opacity: 0.35,
   },
-
   centerIndicator: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     bottom: 0,
     borderLeftWidth: 1,
@@ -119,4 +142,3 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
 });
-

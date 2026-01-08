@@ -1,14 +1,7 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  Animated,
-} from "react-native";
-import { useRef, useEffect } from "react";
-import { colors, spacing, typography } from "@/theme";
+import { View, Text, StyleSheet, FlatList } from "react-native";
+import { useRef, useCallback, useMemo } from "react";
+import { useFocusEffect } from "expo-router";
+import { colors, typography } from "@/theme";
 
 type VerticalPickerProps<T> = {
   data: T[];
@@ -18,7 +11,24 @@ type VerticalPickerProps<T> = {
   renderLabel?: (item: T) => string;
 };
 
-const DEFAULT_ITEM_HEIGHT = 48;
+const DEFAULT_ITEM_HEIGHT = 70;
+const VISIBLE_ITEMS = 5;
+
+/**
+ * Índice lógico da seleção
+ */
+const SELECTION_INDEX = 1;
+
+/**
+ * Distância das linhas em relação ao centro do texto
+ */
+const LINE_OFFSET = 26;
+
+/**
+ * 🔥 CONTROLA SOMENTE a subida/descida das linhas
+ * (+ desce | - sobe)
+ */
+const LINE_VERTICAL_OFFSET = 55;
 
 export function VerticalPicker<T>({
   data,
@@ -27,121 +37,116 @@ export function VerticalPicker<T>({
   itemHeight = DEFAULT_ITEM_HEIGHT,
   renderLabel = (item) => String(item),
 }: VerticalPickerProps<T>) {
-  const listRef = useRef<FlatList>(null);
+  const listRef = useRef<FlatList<T | null>>(null);
+
+  const dataWithSpacers = useMemo<(T | null)[]>(() => {
+    const spacers = Array(SELECTION_INDEX).fill(null);
+    return [...spacers, ...data, ...spacers];
+  }, [data]);
 
   const selectedIndex = data.findIndex((item) => item === value);
+  const selectedIndexWithSpacers =
+    selectedIndex >= 0 ? selectedIndex + SELECTION_INDEX : -1;
 
-  const scrollY = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (selectedIndex >= 0) {
-      listRef.current?.scrollToOffset({
-        offset: selectedIndex * itemHeight,
-        animated: false,
-      });
-    }
-  }, [selectedIndex, itemHeight]);
-
-  const handleMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const offsetY = e.nativeEvent.contentOffset.y;
-    const index = Math.round(offsetY / itemHeight);
-    const selectedItem = data[index];
-
-    if (selectedItem !== undefined) {
-      onChange(selectedItem);
-    }
-  };
+  useFocusEffect(
+    useCallback(() => {
+      if (selectedIndexWithSpacers >= 0) {
+        requestAnimationFrame(() => {
+          listRef.current?.scrollToIndex({
+            index: selectedIndexWithSpacers,
+            animated: false,
+            viewPosition: SELECTION_INDEX / VISIBLE_ITEMS,
+          });
+        });
+      }
+    }, [selectedIndexWithSpacers])
+  );
 
   return (
-    <View style={[styles.container, { height: itemHeight * 5 }]}>
-      {/* Máscara superior */}
-      <View style={styles.fadeTop} />
+    <View style={[styles.container, { height: itemHeight * VISIBLE_ITEMS }]}>
+      {/* 🔥 LINHA SUPERIOR */}
+      <View
+        pointerEvents="none"
+        style={[
+          styles.selectionLine,
+          {
+            top:
+              itemHeight * SELECTION_INDEX +
+              itemHeight / 2 -
+              LINE_OFFSET +
+              LINE_VERTICAL_OFFSET,
+          },
+        ]}
+      />
 
-      <Animated.FlatList
-        style={{ zIndex: 2 }}
+      {/* 🔥 LINHA INFERIOR */}
+      <View
+        pointerEvents="none"
+        style={[
+          styles.selectionLine,
+          {
+            top:
+              itemHeight * SELECTION_INDEX +
+              itemHeight / 2 +
+              LINE_OFFSET +
+              LINE_VERTICAL_OFFSET,
+          },
+        ]}
+      />
+
+      <FlatList
         ref={listRef}
-        data={data}
+        data={dataWithSpacers}
         keyExtractor={(_, index) => String(index)}
         showsVerticalScrollIndicator={false}
         snapToInterval={itemHeight}
         decelerationRate="fast"
         contentContainerStyle={{
-          paddingVertical: itemHeight * 2,
+          paddingTop: itemHeight * SELECTION_INDEX,
+          paddingBottom:
+            itemHeight * (VISIBLE_ITEMS - SELECTION_INDEX - 1),
         }}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}
-        scrollEventThrottle={16}
-        onMomentumScrollEnd={handleMomentumEnd}
-        renderItem={({ item, index }) => {
-          const inputRange = [
-            (index - 3) * itemHeight,
-            (index - 2) * itemHeight,
-            (index - 1) * itemHeight,
-            index * itemHeight,
-            (index + 1) * itemHeight,
-            (index + 2) * itemHeight,
-            (index + 3) * itemHeight,
-          ];
+        getItemLayout={(_, index) => ({
+          length: itemHeight,
+          offset: itemHeight * index,
+          index,
+        })}
+        onMomentumScrollEnd={(e) => {
+          const offsetY = e.nativeEvent.contentOffset.y;
 
-          const opacity = scrollY.interpolate({
-            inputRange,
-            outputRange: [0.15, 0.35, 0.6, 1, 0.6, 0.35, 0.15],
-            extrapolate: "clamp",
-          });
+          const indexWithSpacers = Math.round(
+            (offsetY + SELECTION_INDEX * itemHeight) / itemHeight
+          );
 
-          const scale = scrollY.interpolate({
-            inputRange,
-            outputRange: [0.82, 0.88, 0.94, 1, 0.94, 0.88, 0.82],
-            extrapolate: "clamp",
-          });
+          const dataIndex = indexWithSpacers - SELECTION_INDEX;
+          const item = data[dataIndex];
 
-          const translateY = scrollY.interpolate({
-            inputRange,
-            outputRange: [18, 10, 4, 0, -4, -10, -18],
-            extrapolate: "clamp",
-          });
+          if (item !== undefined) {
+            onChange(item);
+          }
+        }}
+        renderItem={({ item }) => {
+          if (item === null) {
+            return <View style={{ height: itemHeight }} />;
+          }
 
           const isSelected = item === value;
 
           return (
-            <Animated.View
-              style={[
-                styles.item,
-                {
-                  height: itemHeight,
-                  opacity,
-                  transform: [{ scale }, { translateY }],
-                },
-              ]}
-            >
+            <View style={[styles.item, { height: itemHeight }]}>
               <Text
                 style={[
                   styles.text,
-                  isSelected ? styles.textSelected : styles.textInactive,
+                  isSelected
+                    ? styles.textSelected
+                    : styles.textInactive,
                 ]}
               >
                 {renderLabel(item)}
               </Text>
-            </Animated.View>
+            </View>
           );
         }}
-      />
-
-      {/* Máscara inferior */}
-      <View style={styles.fadeBottom} />
-
-      {/* Indicador central */}
-      <View
-        pointerEvents="none"
-        style={[
-          styles.selectionIndicator,
-          {
-            top: itemHeight * 2,
-            height: itemHeight,
-          },
-        ]}
       />
     </View>
   );
@@ -150,59 +155,30 @@ export function VerticalPicker<T>({
 const styles = StyleSheet.create({
   container: {
     position: "relative",
-    justifyContent: "center",
   },
-
   item: {
     justifyContent: "center",
     alignItems: "center",
   },
-
   text: {
     ...typography.base,
   },
-
   textSelected: {
-    color: colors.textPrimary,
-    fontWeight: "500",
     fontSize: 20,
+    fontWeight: "600",
+    color: colors.textPrimary,
   },
-
   textInactive: {
     color: colors.textTertiary,
     opacity: 0.35,
   },
-
-  selectionIndicator: {
+  selectionLine: {
     position: "absolute",
-    left: spacing.lg,
-    right: spacing.lg,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: colors.borderLight,
-  },
-
-  fadeTop: {
-    position: "absolute",
-    top: 0,
     left: 0,
     right: 0,
-    height: "40%",
-    backgroundColor: colors.background,
-    opacity: 0.85,
-    zIndex: 1,
-    pointerEvents: "none",
-  },
-
-  fadeBottom: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: "40%",
-    backgroundColor: colors.background,
-    opacity: 0.85,
-    zIndex: 1,
-    pointerEvents: "none",
+    height: 1,
+    backgroundColor: colors.textPrimary,
+    opacity: 0.15,
+    zIndex: 10,
   },
 });
