@@ -4,10 +4,17 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useQuiz } from "@/hooks/QuizContext";
+
 import BirthDateQuestion from "./questions/BirthDate";
 import HeightQuestion from "./questions/Height";
 import WeightQuestion from "./questions/Weight";
 import TargetWeightQuestion from "./questions/TargetWeight";
+
+import OnboardingWeeklyEvolution from "./motivations/OnboardingWeeklyEvolution";
+import OnboardingWeightProgress from "./motivations/OnboardingWeightProgress";
+import OnboardingPlanUnlock from "./motivations/OnboardingPlanUnlock";
+import OnboardingWeightProjection from "./motivations/OnboardingWeightProjection";
+
 import { colors, spacing, typography, layout } from "@/theme";
 
 export default function QuizScreen() {
@@ -18,11 +25,11 @@ export default function QuizScreen() {
     state,
     currentQuestion,
     totalSteps,
-    hasPrevious,
     hasAnswer,
     canGoNext,
     canComplete,
     isLastQuestion,
+    activeMotivation,
     answerQuestion,
     goNext,
     goToPrevious,
@@ -41,7 +48,7 @@ export default function QuizScreen() {
   const handleContinue = () => {
     if (canComplete) {
       router.replace("/(onboarding)/result");
-    } else if (canGoNext) {
+    } else if (canGoNext || activeMotivation) {
       goNext();
     }
   };
@@ -51,13 +58,7 @@ export default function QuizScreen() {
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => {
-            if (state.currentStep === 0) {
-              router.replace("/");
-            } else {
-              goToPrevious();
-            }
-          }}
+          onPress={goToPrevious}
           activeOpacity={0.7}
           style={styles.backButton}
         >
@@ -75,78 +76,102 @@ export default function QuizScreen() {
 
       {/* CONTEÚDO */}
       <View key={currentQuestion.id} style={styles.content}>
-        {/* PERGUNTAS ESPECIAIS */}
-        {currentQuestion.type === "date" && (
-          <BirthDateQuestion
-            value={state.answers[currentQuestion.id]}
-            onChange={(date) => answerQuestion(date)}
-          />
+        {activeMotivation === "weekly-evolution" && (
+          <OnboardingWeeklyEvolution />
         )}
 
-        {currentQuestion.type === "number" && currentQuestion.unit === "cm" && (
-          <HeightQuestion
-            value={state.answers[currentQuestion.id]}
-            onChange={(value) => answerQuestion(value)}
-          />
+        {activeMotivation === "weight-progress" && (
+          <OnboardingWeightProgress />
         )}
 
-        {currentQuestion.type === "number" &&
-          currentQuestion.unit === "kg" &&
-          currentQuestion.id === "12" && (
-            <WeightQuestion
-              value={state.answers[currentQuestion.id]}
-              onChange={(value) => answerQuestion(value)}
-            />
-          )}
+        {activeMotivation === "plan-unlock" && (
+          <OnboardingPlanUnlock />
+        )}
 
-        {currentQuestion.type === "number" &&
-          currentQuestion.unit === "kg" &&
-          currentQuestion.id === "13" && (
-            <TargetWeightQuestion
-              currentWeight={state.answers["12"]}
-              value={state.answers[currentQuestion.id]}
-              onChange={(value) => answerQuestion(value)}
-            />
-          )}
+        {activeMotivation === "weight-projection" && (
+          <OnboardingWeightProjection />
+        )}
 
-        {/* PERGUNTAS PADRÃO */}
-        {(currentQuestion.type === "single" ||
-          currentQuestion.type === "multiple") && (
+        {!activeMotivation && (
           <>
-            <Text style={styles.question}>{currentQuestion.question}</Text>
+            {currentQuestion.type === "date" && (
+              <BirthDateQuestion
+                value={state.answers[currentQuestion.id]}
+                onChange={(date) => answerQuestion(date)}
+              />
+            )}
 
-            <View style={styles.answers}>
-              {currentQuestion.options?.map((option) => {
-                const selected =
-                  currentQuestion.type === "multiple"
-                    ? state.answers[currentQuestion.id]?.includes(option)
-                    : state.answers[currentQuestion.id] === option;
+            {currentQuestion.type === "number" &&
+              currentQuestion.unit === "cm" && (
+                <HeightQuestion
+                  value={state.answers[currentQuestion.id]}
+                  onChange={(value) => answerQuestion(value)}
+                />
+              )}
 
-                return (
-                  <TouchableOpacity
-                    key={option}
-                    style={[styles.option, selected && styles.optionSelected]}
-                    activeOpacity={0.85}
-                    onPress={() => answerQuestion(option)}
-                  >
-                    <Text
-                      style={[
-                        styles.optionText,
-                        selected && styles.optionTextSelected,
-                      ]}
-                    >
-                      {option}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
+            {currentQuestion.type === "number" &&
+              currentQuestion.unit === "kg" &&
+              currentQuestion.id === "12" && (
+                <WeightQuestion
+                  value={state.answers[currentQuestion.id]}
+                  onChange={(value) => answerQuestion(value)}
+                />
+              )}
+
+            {currentQuestion.type === "number" &&
+              currentQuestion.unit === "kg" &&
+              currentQuestion.id === "13" && (
+                <TargetWeightQuestion
+                  currentWeight={state.answers["12"]}
+                  value={state.answers[currentQuestion.id]}
+                  onChange={(value) => answerQuestion(value)}
+                />
+              )}
+
+            {(currentQuestion.type === "single" ||
+              currentQuestion.type === "multiple") && (
+              <>
+                <Text style={styles.question}>
+                  {currentQuestion.question}
+                </Text>
+
+                <View style={styles.answers}>
+                  {currentQuestion.options?.map((option) => {
+                    const selected =
+                      currentQuestion.type === "multiple"
+                        ? state.answers[currentQuestion.id]?.includes(option)
+                        : state.answers[currentQuestion.id] === option;
+
+                    return (
+                      <TouchableOpacity
+                        key={option}
+                        style={[
+                          styles.option,
+                          selected && styles.optionSelected,
+                        ]}
+                        activeOpacity={0.85}
+                        onPress={() => answerQuestion(option)}
+                      >
+                        <Text
+                          style={[
+                            styles.optionText,
+                            selected && styles.optionTextSelected,
+                          ]}
+                        >
+                          {option}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </>
+            )}
           </>
         )}
       </View>
 
       {/* CTA */}
-      {hasAnswer && (canGoNext || canComplete) && (
+      {(hasAnswer || activeMotivation) && (
         <View
           style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}
         >
@@ -156,7 +181,9 @@ export default function QuizScreen() {
             onPress={handleContinue}
           >
             <Text style={styles.continueText}>
-              {isLastQuestion ? "Finalizar" : "Continuar"}
+              {isLastQuestion
+                ? "Criar meu plano personalizado →"
+                : "Continuar"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -171,7 +198,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
 
-  /* HEADER */
   header: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
@@ -189,10 +215,6 @@ const styles = StyleSheet.create({
   backArrow: {
     fontSize: 20,
     color: colors.textSecondary,
-  },
-
-  backPlaceholder: {
-    width: 32,
   },
 
   progressContainer: {
@@ -213,7 +235,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
 
-  /* CONTENT */
   content: {
     flex: 1,
     paddingHorizontal: spacing.lg,
@@ -255,7 +276,6 @@ const styles = StyleSheet.create({
     color: colors.primaryDark,
   },
 
-  /* FOOTER */
   footer: {
     paddingHorizontal: spacing.lg,
   },

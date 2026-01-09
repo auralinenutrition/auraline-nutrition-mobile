@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
 import { QUIZ_QUESTIONS } from "@/hooks/quiz.questions";
+import { QUIZ_MOTIVATIONS_BY_QUESTION } from "@/hooks/quiz.motivations";
 
 type QuizState = {
   currentStep: number;
@@ -16,6 +17,7 @@ type QuizContextType = {
   canGoNext: boolean;
   canComplete: boolean;
   isLastQuestion: boolean;
+  activeMotivation: string | null;
   answerQuestion: (value: any) => void;
   goNext: () => void;
   goToPrevious: () => void;
@@ -32,6 +34,7 @@ const initialState: QuizState = {
 
 export function QuizProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<QuizState>(initialState);
+  const [activeMotivation, setActiveMotivation] = useState<string | null>(null);
 
   const totalSteps = QUIZ_QUESTIONS.length;
 
@@ -65,12 +68,30 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
 
   function goNext() {
     setState((prev) => {
+      const current = QUIZ_QUESTIONS[prev.currentStep];
+      const motivation = QUIZ_MOTIVATIONS_BY_QUESTION[current.id];
+
+      // 1️⃣ Abrir motivação se existir
+      if (motivation && !activeMotivation) {
+        setActiveMotivation(motivation);
+        return prev;
+      }
+
+      // 2️⃣ Fechar motivação e avançar
+      setActiveMotivation(null);
+
       if (prev.currentStep >= totalSteps - 1) return prev;
       return { ...prev, currentStep: prev.currentStep + 1 };
     });
   }
 
   function goToPrevious() {
+    // se estiver em motivação, apenas fecha
+    if (activeMotivation) {
+      setActiveMotivation(null);
+      return;
+    }
+
     setState((prev) => {
       if (prev.currentStep <= 0) return prev;
       return { ...prev, currentStep: prev.currentStep - 1 };
@@ -78,6 +99,7 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
   }
 
   function resetQuiz() {
+    setActiveMotivation(null);
     setState(initialState);
   }
 
@@ -92,6 +114,7 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
         canGoNext,
         canComplete,
         isLastQuestion,
+        activeMotivation,
         answerQuestion,
         goNext,
         goToPrevious,

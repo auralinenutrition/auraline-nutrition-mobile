@@ -5,9 +5,9 @@ import {
   ScrollView,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Dimensions,
 } from "react-native";
-import { useRef, useCallback } from "react";
-import { useFocusEffect } from "expo-router";
+import { useEffect, useRef } from "react";
 import { colors, spacing, typography } from "@/theme";
 
 type HorizontalPickerProps<T> = {
@@ -19,8 +19,17 @@ type HorizontalPickerProps<T> = {
 };
 
 const DEFAULT_ITEM_WIDTH = 72;
-const VISIBLE_ITEMS = 5;
-const CENTER_OFFSET = Math.floor(VISIBLE_ITEMS / 2);
+
+/**
+ * Distância das linhas em relação ao centro do item selecionado
+ */
+const LINE_OFFSET = 1;
+
+/**
+ * 🔥 Move SOMENTE as linhas na horizontal
+ * (+ direita | - esquerda)
+ */
+const LINE_HORIZONTAL_OFFSET = 0;
 
 export function HorizontalPicker<T>({
   data,
@@ -30,48 +39,56 @@ export function HorizontalPicker<T>({
   renderLabel = (item) => String(item),
 }: HorizontalPickerProps<T>) {
   const scrollRef = useRef<ScrollView>(null);
+  const selectedIndex = data.findIndex((i) => i === value);
 
-  const selectedIndex = data.findIndex((item) => item === value);
+  const screenWidth = Dimensions.get("window").width;
+  const centerX = screenWidth / 2;
 
-  /**
-   * 🔥 REPOSICIONA SEMPRE QUE A TELA VOLTA AO FOCO
-   */
-  useFocusEffect(
-    useCallback(() => {
-      if (selectedIndex >= 0) {
-        const offset = (selectedIndex - CENTER_OFFSET) * itemWidth;
-
-        requestAnimationFrame(() => {
-          scrollRef.current?.scrollTo({
-            x: Math.max(0, offset),
-            animated: false,
-          });
-        });
-      }
-    }, [selectedIndex, itemWidth])
-  );
-
-  const onMomentumEnd = (
-    e: NativeSyntheticEvent<NativeScrollEvent>
-  ) => {
-    const offsetX = e.nativeEvent.contentOffset.x;
-    const index =
-      Math.round(offsetX / itemWidth) + CENTER_OFFSET;
-
-    const selectedItem = data[index];
-    if (selectedItem !== undefined) {
-      onChange(selectedItem);
+  useEffect(() => {
+    if (selectedIndex >= 0) {
+      scrollRef.current?.scrollTo({
+        x: selectedIndex * itemWidth,
+        animated: false,
+      });
     }
+  }, [selectedIndex, itemWidth]);
+
+  const onMomentumEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const x = e.nativeEvent.contentOffset.x;
+    const index = Math.round(x / itemWidth);
+    const item = data[index];
+    if (item !== undefined) onChange(item);
   };
 
   return (
     <View style={styles.container}>
-      {/* Indicador central */}
+      {/* 🔥 LINHA ESQUERDA */}
       <View
         pointerEvents="none"
         style={[
-          styles.centerIndicator,
-          { width: itemWidth },
+          styles.selectionLine,
+          {
+            left:
+              centerX -
+              itemWidth / 2 -
+              LINE_OFFSET +
+              LINE_HORIZONTAL_OFFSET,
+          },
+        ]}
+      />
+
+      {/* 🔥 LINHA DIREITA */}
+      <View
+        pointerEvents="none"
+        style={[
+          styles.selectionLine,
+          {
+            left:
+              centerX +
+              itemWidth / 2 +
+              LINE_OFFSET +
+              LINE_HORIZONTAL_OFFSET,
+          },
         ]}
       />
 
@@ -83,18 +100,18 @@ export function HorizontalPicker<T>({
         decelerationRate="fast"
         onMomentumScrollEnd={onMomentumEnd}
         contentContainerStyle={{
-          paddingHorizontal: itemWidth * CENTER_OFFSET,
+          paddingHorizontal: screenWidth / 2 - itemWidth / 2,
         }}
       >
-        {data.map((item, index) => {
-          const isSelected = item === value;
+        {data.map((item, idx) => {
+          const selected = item === value;
 
           return (
-            <View key={index} style={[styles.item, { width: itemWidth }]}>
+            <View key={idx} style={[styles.item, { width: itemWidth }]}>
               <Text
                 style={[
                   styles.text,
-                  isSelected
+                  selected
                     ? styles.textSelected
                     : styles.textInactive,
                 ]}
@@ -112,33 +129,36 @@ export function HorizontalPicker<T>({
 const styles = StyleSheet.create({
   container: {
     position: "relative",
-    alignItems: "center",
     marginVertical: spacing.lg,
   },
+
   item: {
     justifyContent: "center",
     alignItems: "center",
   },
+
   text: {
     ...typography.base,
   },
+
   textSelected: {
     fontSize: 22,
     fontWeight: "600",
     color: colors.textPrimary,
   },
+
   textInactive: {
     color: colors.textTertiary,
     opacity: 0.35,
   },
-  centerIndicator: {
+
+  selectionLine: {
     position: "absolute",
     top: 0,
     bottom: 0,
-    borderLeftWidth: 1,
-    borderRightWidth: 1,
-    borderColor: colors.borderLight,
-    opacity: 0.8,
-    zIndex: 1,
+    width: 1,
+    backgroundColor: colors.textPrimary,
+    opacity: 0.15,
+    zIndex: 10,
   },
 });
