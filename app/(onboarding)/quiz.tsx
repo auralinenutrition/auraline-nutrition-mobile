@@ -33,6 +33,7 @@ export default function QuizScreen() {
     answerQuestion,
     goNext,
     goToPrevious,
+    resetQuiz,
   } = useQuiz();
 
   useEffect(() => {
@@ -45,20 +46,44 @@ export default function QuizScreen() {
 
   const progress = (state.currentStep + 1) / totalSteps;
 
-  const handleContinue = () => {
+  function handleContinue() {
     if (canComplete) {
       router.replace("/(onboarding)/result");
-    } else if (canGoNext || activeMotivation) {
+      return;
+    }
+
+    if (canGoNext || activeMotivation) {
       goNext();
     }
-  };
+  }
+
+  /**
+   * 🔥 BACK INTELIGENTE
+   * - Se estiver em motivação → fecha motivação
+   * - Se estiver na primeira pergunta → volta para landing
+   * - Caso contrário → volta pergunta
+   */
+  function handleBack() {
+    if (activeMotivation) {
+      goToPrevious();
+      return;
+    }
+
+    if (state.currentStep === 0) {
+      resetQuiz();
+      router.replace("/");
+      return;
+    }
+
+    goToPrevious();
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={goToPrevious}
+          onPress={handleBack}
           activeOpacity={0.7}
           style={styles.backButton}
         >
@@ -68,7 +93,10 @@ export default function QuizScreen() {
         <View style={styles.progressContainer}>
           <View style={styles.progressTrack}>
             <View
-              style={[styles.progressBar, { width: `${progress * 100}%` }]}
+              style={[
+                styles.progressBar,
+                { width: `${progress * 100}%` },
+              ]}
             />
           </View>
         </View>
@@ -173,7 +201,10 @@ export default function QuizScreen() {
       {/* CTA */}
       {(hasAnswer || activeMotivation) && (
         <View
-          style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}
+          style={[
+            styles.footer,
+            { paddingBottom: insets.bottom + spacing.md },
+          ]}
         >
           <TouchableOpacity
             style={styles.continueButton}
