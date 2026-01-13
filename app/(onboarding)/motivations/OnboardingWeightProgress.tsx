@@ -1,39 +1,180 @@
-import { View, Text, StyleSheet } from "react-native";
-import { colors, spacing, typography, layout } from "@/theme";
+import { View, Text, StyleSheet, Animated } from "react-native";
+import { useState, useEffect, useRef } from "react";
+import { useQuiz } from "@/hooks/QuizContext";
+import { colors, spacing } from "@/theme";
+
+const CHART_HEIGHT = 160;
+const CHART_PADDING = 28;
+
+const DOT_SIZE = 10;
+const DOT_RADIUS = DOT_SIZE / 2;
+
+const MIN_WEIGHT = 20;
+const MAX_WEIGHT = 100;
+
+const Y_AXIS_VALUES = [100, 80, 60, 40, 20];
 
 export default function OnboardingWeightProgress() {
+  const { state } = useQuiz();
+  const [chartWidth, setChartWidth] = useState(0);
+
+  const anim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: 900,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  const pesoAtual = Number(state.answers[12]);
+  const pesoDesejado = Number(state.answers[13]);
+
+  if (isNaN(pesoAtual) || isNaN(pesoDesejado)) {
+    return null;
+  }
+
+  const pesoIntermediario =
+    pesoAtual + (pesoDesejado - pesoAtual) * 0.5;
+
+  const points = [
+    { label: "3 dias", weight: pesoAtual },
+    { label: "7 dias", weight: pesoIntermediario },
+    { label: "30 dias", weight: pesoDesejado },
+  ];
+
+  function getX(index: number) {
+    return (
+      (index / (points.length - 1)) *
+        (chartWidth - CHART_PADDING * 2) +
+      CHART_PADDING
+    );
+  }
+
+  function getY(weight: number) {
+    const clamped = Math.min(
+      MAX_WEIGHT,
+      Math.max(MIN_WEIGHT, weight)
+    );
+
+    const normalized =
+      (clamped - MIN_WEIGHT) /
+      (MAX_WEIGHT - MIN_WEIGHT);
+
+    return normalized * (CHART_HEIGHT - 20);
+  }
+
   return (
-    <View style={styles.container}>
-      {/* TÍTULO */}
-      <Text style={styles.title}>
+    <View style={styles.screen}>
+      <Text style={styles.mainTitle}>
         Você está mais perto da sua meta do que imagina
       </Text>
 
-      {/* CARD */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>
+        <Text style={styles.subtitle}>
           Evolução esperada do seu peso
         </Text>
 
-        {/* GRÁFICO (placeholder) */}
-        <View style={styles.chart}>
-          <View style={styles.chartLine} />
-          <View style={[styles.dot, styles.dotLeft]} />
-          <View style={[styles.dot, styles.dotCenter]} />
-          <View style={[styles.dot, styles.dotRight]} />
+        <View
+          style={styles.chart}
+          onLayout={(e) =>
+            setChartWidth(e.nativeEvent.layout.width)
+          }
+        >
+          {/* EIXO Y */}
+          {Y_AXIS_VALUES.map((value) => (
+            <Text
+              key={value}
+              style={[
+                styles.yLabel,
+                {
+                  bottom:
+                    ((value - MIN_WEIGHT) /
+                      (MAX_WEIGHT - MIN_WEIGHT)) *
+                    (CHART_HEIGHT - 20),
+                },
+              ]}
+            >
+              {value}
+            </Text>
+          ))}
 
-          <View style={styles.chartLabels}>
-            <Text style={styles.label}>3 dias</Text>
-            <Text style={styles.label}>7 dias</Text>
-            <Text style={styles.label}>30 dias</Text>
-          </View>
+          {/* LINHAS */}
+          {chartWidth > 0 &&
+            points.map((_, index) => {
+              if (index === points.length - 1) return null;
+
+              const x1 = getX(index) + DOT_RADIUS;
+              const y1 = getY(points[index].weight) + DOT_RADIUS;
+
+              const x2 = getX(index + 1) + DOT_RADIUS;
+              const y2 =
+                getY(points[index + 1].weight) +
+                DOT_RADIUS;
+
+              const dx = x2 - x1;
+              const dy = y1 - y2;
+
+              const length = Math.sqrt(dx * dx + dy * dy);
+              const angle = Math.atan2(dy, dx);
+
+              return (
+                <Animated.View
+                  key={index}
+                  style={[
+                    styles.line,
+                    {
+                      left: x1,
+                      bottom: y1,
+                      width: length,
+                      transform: [
+                        { rotate: `${angle}rad` },
+                        { scaleX: anim },
+                      ],
+                    },
+                  ]}
+                />
+              );
+            })}
+
+          {/* PONTOS */}
+          {chartWidth > 0 &&
+            points.map((point, index) => (
+              <Animated.View
+                key={point.label}
+                style={[
+                  styles.dot,
+                  {
+                    left: getX(index),
+                    bottom: getY(point.weight),
+                    transform: [{ scale: anim }],
+                    opacity: anim,
+                  },
+                ]}
+              />
+            ))}
         </View>
 
-        {/* TEXTO */}
+        <View style={styles.xAxis}>
+          {points.map((point, index) => (
+            <View
+              key={point.label}
+              style={[
+                styles.xLabelContainer,
+                { left: getX(index) },
+              ]}
+            >
+              <Text style={styles.xLabel}>
+                {point.label}
+              </Text>
+            </View>
+          ))}
+        </View>
+
         <Text style={styles.description}>
-          Com base nos dados reais de milhares de usuários, quem segue um plano
-          personalizado costuma notar mudanças logo nos primeiros dias.
-          {"\n"}Você já está progredindo.
+          Essa projeção considera seu peso atual e o
+          objetivo que você definiu.
         </Text>
       </View>
     </View>
@@ -41,80 +182,78 @@ export default function OnboardingWeightProgress() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingTop: spacing.xl,
+  screen: {
+    padding: spacing.lg,
   },
 
-  title: {
+  mainTitle: {
     fontSize: 26,
     fontWeight: "600",
-    color: colors.textPrimary,
     marginBottom: spacing.lg,
   },
 
   card: {
-    backgroundColor: colors.white,
-    borderRadius: layout.borderRadius.lg,
-    padding: spacing.lg,
+    backgroundColor: colors.background,
+    borderRadius: 16,
+    padding: spacing.xl,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: colors.border,
   },
 
-  cardTitle: {
+  subtitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.textPrimary,
     marginBottom: spacing.md,
   },
 
   chart: {
-    height: 140,
-    justifyContent: "center",
+    height: CHART_HEIGHT,
+    position: "relative",
     marginBottom: spacing.md,
   },
 
-  chartLine: {
+  yLabel: {
+    position: "absolute",
+    left: -18,
+    fontSize: 12,
+    color: colors.textTertiary,
+  },
+
+  line: {
+    position: "absolute",
     height: 2,
     backgroundColor: colors.primary,
-    borderRadius: 2,
+    transformOrigin: "left center",
   },
 
   dot: {
     position: "absolute",
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: DOT_SIZE,
+    height: DOT_SIZE,
+    borderRadius: DOT_RADIUS,
     backgroundColor: colors.primary,
-    top: "50%",
-    marginTop: -5,
   },
 
-  dotLeft: {
-    left: 0,
-  },
-
-  dotCenter: {
-    left: "50%",
-    marginLeft: -5,
-  },
-
-  dotRight: {
-    right: 0,
-  },
-
-  chartLabels: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  xAxis: {
+    height: 24,
     marginTop: spacing.sm,
+    position: "relative",
   },
 
-  label: {
-    ...typography.sm,
+  xLabelContainer: {
+    position: "absolute",
+    transform: [{ translateX: -20 }],
+  },
+
+  xLabel: {
+    fontSize: 14,
     color: colors.textTertiary,
   },
 
   description: {
-    ...typography.sm,
+    marginTop: spacing.md,
+    fontSize: 14,
+    textAlign: "center",
     color: colors.textSecondary,
   },
 });
