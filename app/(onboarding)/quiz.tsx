@@ -10,8 +10,8 @@ import WeightQuestion from "./questions/Weight";
 import TargetWeightQuestion from "./questions/TargetWeight";
 
 import OnboardingWeeklyEvolution from "./motivations/OnboardingWeeklyEvolution";
-import OnboardingWeightProgress from "./motivations/OnboardingWeightProgress";
 import OnboardingWeightProjection from "./motivations/OnboardingWeightProjection";
+import OnboardingEducationShort from "./motivations/OnboardingEducationShort";
 
 import { colors, spacing, typography, layout } from "@/theme";
 
@@ -38,11 +38,6 @@ export default function QuizScreen() {
 
   const progress = (state.currentStep + 1) / totalSteps;
 
-  /**
-   * CONTINUAR
-   * - Última pergunta + sem motivação → loading
-   * - Caso contrário → fluxo normal
-   */
   function handleContinue() {
     if (canComplete && !activeMotivation) {
       router.replace("/(onboarding)/loading");
@@ -54,9 +49,6 @@ export default function QuizScreen() {
     }
   }
 
-  /**
-   * BACK INTELIGENTE
-   */
   function handleBack() {
     if (activeMotivation) {
       goToPrevious();
@@ -102,12 +94,12 @@ export default function QuizScreen() {
           <OnboardingWeeklyEvolution />
         )}
 
-        {activeMotivation === "weight-progress" && (
-          <OnboardingWeightProgress />
-        )}
-
         {activeMotivation === "weight-projection" && (
           <OnboardingWeightProjection />
+        )}
+
+        {activeMotivation === "education-short" && (
+          <OnboardingEducationShort />
         )}
 
         {!activeMotivation && (
@@ -214,66 +206,27 @@ export default function QuizScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-
+  container: { flex: 1, backgroundColor: colors.background },
   header: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     flexDirection: "row",
     alignItems: "center",
   },
-
-  backButton: {
-    width: 32,
-    height: 32,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-
-  backArrow: {
-    fontSize: 20,
-    color: colors.textSecondary,
-  },
-
-  progressContainer: {
-    flex: 1,
-    marginLeft: spacing.sm,
-  },
-
-  progressTrack: {
-    height: 4,
-    backgroundColor: colors.borderLight,
-    borderRadius: 4,
-    overflow: "hidden",
-  },
-
-  progressBar: {
-    height: 4,
-    backgroundColor: colors.primary,
-    borderRadius: 4,
-  },
-
-  content: {
-    flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-  },
-
+  backButton: { width: 32, height: 32, justifyContent: "center", alignItems: "center" },
+  backArrow: { fontSize: 20, color: colors.textSecondary },
+  progressContainer: { flex: 1, marginLeft: spacing.sm },
+  progressTrack: { height: 4, backgroundColor: colors.borderLight, borderRadius: 4 },
+  progressBar: { height: 4, backgroundColor: colors.primary },
+  content: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.xl },
   question: {
     fontSize: 30,
     lineHeight: 30,
     fontWeight: "500",
-    color: colors.textPrimary,
     marginBottom: 58,
+    color: colors.textPrimary,
   },
-
-  answers: {
-    gap: spacing.md,
-  },
-
+  answers: { gap: spacing.md },
   option: {
     backgroundColor: colors.white,
     borderWidth: 1,
@@ -282,34 +235,18 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
   },
-
   optionSelected: {
     borderColor: colors.primary,
     backgroundColor: colors.primaryLight,
   },
-
-  optionText: {
-    ...typography.base,
-    color: colors.textPrimary,
-  },
-
-  optionTextSelected: {
-    color: colors.primaryDark,
-  },
-
-  footer: {
-    paddingHorizontal: spacing.lg,
-  },
-
+  optionText: { ...typography.base, color: colors.textPrimary },
+  optionTextSelected: { color: colors.primaryDark },
+  footer: { paddingHorizontal: spacing.lg },
   continueButton: {
     backgroundColor: colors.primary,
     borderRadius: layout.borderRadius.base,
     paddingVertical: spacing.md + 4,
     alignItems: "center",
   },
-
-  continueText: {
-    ...typography.base,
-    color: colors.white,
-  },
+  continueText: { ...typography.base, color: colors.white },
 });
