@@ -1,130 +1,281 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Animated } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { useQuiz } from "@/hooks/QuizContext";
 import { colors, spacing, typography, layout } from "@/theme";
 
-export default function OnboardingWeightProjection() {
-  return (
-    <View style={styles.container}>
-      {/* TÍTULO */}
-      <Text style={styles.title}>
-        Você está a poucos segundos{"\n"}
-        de desbloquear seu plano ideal
-      </Text>
+const CHART_HEIGHT = 160;
+const CHART_PADDING = 28;
 
-      {/* SUBTEXTO */}
-      <Text style={styles.subtitle}>
-        Seus dados foram analisados e estamos prestes a gerar um plano{" "}
-        <Text style={styles.bold}>100% personalizado</Text> para acelerar sua
-        evolução — feito exatamente para o seu corpo, sua rotina e seu objetivo.
+const DOT_SIZE = 10;
+const DOT_RADIUS = DOT_SIZE / 2;
+
+const MIN_WEIGHT = 20;
+const MAX_WEIGHT = 100;
+
+const Y_AXIS_VALUES = [100, 80, 60, 40, 20];
+
+export default function OnboardingWeightProjection() {
+  const { state } = useQuiz();
+  const [chartWidth, setChartWidth] = useState(0);
+
+  const anim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(anim, {
+      toValue: 1,
+      duration: 900,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  const pesoAtual = Number(state.answers[12]);
+  const pesoDesejado = Number(state.answers[13]);
+
+  if (isNaN(pesoAtual) || isNaN(pesoDesejado)) {
+    return null;
+  }
+
+  const points = [
+    { label: "Semana 1", weight: pesoAtual },
+    {
+      label: "Semana 2",
+      weight: pesoAtual + (pesoDesejado - pesoAtual) * 0.33,
+    },
+    {
+      label: "Semana 3",
+      weight: pesoAtual + (pesoDesejado - pesoAtual) * 0.66,
+    },
+    { label: "Semana 4", weight: pesoDesejado },
+  ];
+
+  function getX(index: number) {
+    return (
+      (index / (points.length - 1)) *
+        (chartWidth - CHART_PADDING * 2) +
+      CHART_PADDING
+    );
+  }
+
+  function getY(weight: number) {
+    const clamped = Math.min(
+      MAX_WEIGHT,
+      Math.max(MIN_WEIGHT, weight)
+    );
+
+    const normalized =
+      (clamped - MIN_WEIGHT) / (MAX_WEIGHT - MIN_WEIGHT);
+
+    return normalized * (CHART_HEIGHT - 20);
+  }
+
+  return (
+    <View style={styles.screen}>
+      {/* TÍTULO */}
+      <Text style={styles.mainTitle}>
+        Sua evolução pode ser{"\n"}mais rápida do que imagina
       </Text>
 
       {/* CARD */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>
-          Seu objetivo (70kg → 65kg)
+        <Text style={styles.subtitle}>
+          Progresso estimado nas primeiras semanas
         </Text>
 
-        <Text style={styles.cardDescription}>
-          Com base em perfis semelhantes ao seu, você tem um{" "}
-          <Text style={styles.bold}>
-            alto potencial de atingir sua meta
-          </Text>{" "}
-          seguindo as orientações certas.
-        </Text>
+        <View
+          style={styles.chart}
+          onLayout={(e) =>
+            setChartWidth(e.nativeEvent.layout.width)
+          }
+        >
+          {/* EIXO Y */}
+          {Y_AXIS_VALUES.map((value) => (
+            <Text
+              key={value}
+              style={[
+                styles.yLabel,
+                {
+                  bottom:
+                    ((value - MIN_WEIGHT) /
+                      (MAX_WEIGHT - MIN_WEIGHT)) *
+                    (CHART_HEIGHT - 20),
+                },
+              ]}
+            >
+              {value}
+            </Text>
+          ))}
 
-        {/* BARRA DE PROGRESSO */}
-        <View style={styles.progressContainer}>
-          <View style={styles.progressTrack}>
-            <View style={styles.progressFill} />
-          </View>
+          {/* LINHAS */}
+          {chartWidth > 0 &&
+            points.map((_, index) => {
+              if (index === points.length - 1) return null;
 
-          <Text style={styles.progressLabel}>5kg</Text>
+              const x1 = getX(index) + DOT_RADIUS;
+              const y1 = getY(points[index].weight) + DOT_RADIUS;
+
+              const x2 = getX(index + 1) + DOT_RADIUS;
+              const y2 =
+                getY(points[index + 1].weight) +
+                DOT_RADIUS;
+
+              const dx = x2 - x1;
+              const dy = y1 - y2;
+
+              const length = Math.sqrt(dx * dx + dy * dy);
+              const angle = Math.atan2(dy, dx);
+
+              return (
+                <Animated.View
+                  key={index}
+                  style={[
+                    styles.line,
+                    {
+                      left: x1,
+                      bottom: y1,
+                      width: length,
+                      transform: [
+                        { rotate: `${angle}rad` },
+                        { scaleX: anim },
+                      ],
+                    },
+                  ]}
+                />
+              );
+            })}
+
+          {/* PONTOS */}
+          {chartWidth > 0 &&
+            points.map((point, index) => (
+              <Animated.View
+                key={point.label}
+                style={[
+                  styles.dot,
+                  {
+                    left: getX(index),
+                    bottom: getY(point.weight),
+                    transform: [{ scale: anim }],
+                    opacity: anim,
+                  },
+                ]}
+              />
+            ))}
         </View>
+
+        {/* EIXO X */}
+        <View style={styles.xAxis}>
+          {points.map((point, index) => (
+            <View
+              key={point.label}
+              style={[
+                styles.xLabelContainer,
+                { left: getX(index) },
+              ]}
+            >
+              <Text style={styles.xLabel}>
+                {point.label}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        <Text style={styles.description}>
+          Usuários com perfis semelhantes ao seu começam a ver
+          mudanças visíveis entre 2 e 4 semanas — e você está
+          iniciando exatamente no caminho certo para isso.
+        </Text>
       </View>
 
       {/* TEXTO FINAL */}
       <Text style={styles.footerText}>
-        Agora vamos gerar sua estratégia ideal de calorias, macros e hábitos —
-        totalmente adaptada para você ter os melhores resultados possíveis.
+        Quanto antes você seguir seu plano, mais cedo seu corpo
+        responde. É impressionante o quanto pequenas decisões
+        diárias aceleram sua transformação.
       </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    paddingTop: spacing.xl,
+  screen: {
+    padding: spacing.lg,
   },
 
-  title: {
+  mainTitle: {
     fontSize: 26,
     fontWeight: "600",
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
     lineHeight: 32,
   },
 
-  subtitle: {
-    ...typography.base,
-    color: colors.textSecondary,
-    marginBottom: spacing.lg,
-  },
-
-  bold: {
-    fontWeight: "600",
-    color: colors.textPrimary,
-  },
-
   card: {
-    backgroundColor: colors.white,
+    backgroundColor: colors.background,
     borderRadius: layout.borderRadius.lg,
-    padding: spacing.lg,
+    padding: spacing.xl,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: colors.border,
     marginBottom: spacing.lg,
   },
 
-  cardTitle: {
+  subtitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-
-  cardDescription: {
-    ...typography.sm,
-    color: colors.textSecondary,
     marginBottom: spacing.md,
   },
 
-  progressContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+  chart: {
+    height: CHART_HEIGHT,
+    position: "relative",
+    marginBottom: spacing.md,
   },
 
-  progressTrack: {
-    flex: 1,
-    height: 8,
-    backgroundColor: colors.borderLight,
-    borderRadius: 8,
-    overflow: "hidden",
-    marginRight: spacing.sm,
+  yLabel: {
+    position: "absolute",
+    left: -18,
+    fontSize: 12,
+    color: colors.textTertiary,
   },
 
-  progressFill: {
-    width: "30%",
-    height: "100%",
+  line: {
+    position: "absolute",
+    height: 2,
     backgroundColor: colors.primary,
-    borderRadius: 8,
+    transformOrigin: "left center",
   },
 
-  progressLabel: {
-    ...typography.sm,
-    color: colors.textPrimary,
-    fontWeight: "500",
+  dot: {
+    position: "absolute",
+    width: DOT_SIZE,
+    height: DOT_SIZE,
+    borderRadius: DOT_RADIUS,
+    backgroundColor: colors.primary,
+  },
+
+  xAxis: {
+    height: 24,
+    marginTop: spacing.sm,
+    position: "relative",
+  },
+
+  xLabelContainer: {
+    position: "absolute",
+    transform: [{ translateX: -24 }],
+  },
+
+  xLabel: {
+    fontSize: 13,
+    color: colors.textTertiary,
+  },
+
+  description: {
+    marginTop: spacing.md,
+    fontSize: 14,
+    textAlign: "center",
+    color: colors.textSecondary,
   },
 
   footerText: {
-    ...typography.sm,
+    marginTop: spacing.md,
+    fontSize: 14,
     color: colors.textSecondary,
   },
 });

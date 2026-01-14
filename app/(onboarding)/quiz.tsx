@@ -1,5 +1,4 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { useEffect } from "react";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -12,7 +11,6 @@ import TargetWeightQuestion from "./questions/TargetWeight";
 
 import OnboardingWeeklyEvolution from "./motivations/OnboardingWeeklyEvolution";
 import OnboardingWeightProgress from "./motivations/OnboardingWeightProgress";
-import OnboardingPlanUnlock from "./motivations/OnboardingPlanUnlock";
 import OnboardingWeightProjection from "./motivations/OnboardingWeightProjection";
 
 import { colors, spacing, typography, layout } from "@/theme";
@@ -36,19 +34,18 @@ export default function QuizScreen() {
     resetQuiz,
   } = useQuiz();
 
-  useEffect(() => {
-    if (state.isComplete) {
-      router.replace("/(onboarding)/result");
-    }
-  }, [state.isComplete, router]);
-
   if (!currentQuestion) return null;
 
   const progress = (state.currentStep + 1) / totalSteps;
 
+  /**
+   * CONTINUAR
+   * - Última pergunta + sem motivação → loading
+   * - Caso contrário → fluxo normal
+   */
   function handleContinue() {
-    if (canComplete) {
-      router.replace("/(onboarding)/result");
+    if (canComplete && !activeMotivation) {
+      router.replace("/(onboarding)/loading");
       return;
     }
 
@@ -58,10 +55,7 @@ export default function QuizScreen() {
   }
 
   /**
-   * 🔥 BACK INTELIGENTE
-   * - Se estiver em motivação → fecha motivação
-   * - Se estiver na primeira pergunta → volta para landing
-   * - Caso contrário → volta pergunta
+   * BACK INTELIGENTE
    */
   function handleBack() {
     if (activeMotivation) {
@@ -110,10 +104,6 @@ export default function QuizScreen() {
 
         {activeMotivation === "weight-progress" && (
           <OnboardingWeightProgress />
-        )}
-
-        {activeMotivation === "plan-unlock" && (
-          <OnboardingPlanUnlock />
         )}
 
         {activeMotivation === "weight-projection" && (

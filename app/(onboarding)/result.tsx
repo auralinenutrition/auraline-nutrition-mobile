@@ -1,55 +1,95 @@
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useQuiz } from "@/hooks/QuizContext";
+import { colors, spacing, typography, layout } from "@/theme";
 
 export default function ResultScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { state } = useQuiz();
 
-  const handleContinue = () => {
-    router.replace('/(onboarding)/plans');
-  };
+  const pesoAtual = Number(state.answers["12"]);
+  const pesoDesejado = Number(state.answers["13"]);
+
+  const diferenca = pesoDesejado - pesoAtual;
+  const tendencia = diferenca < 0 ? "perder" : "ganhar";
+  const valorAbs = Math.abs(diferenca);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.iconContainer}>
-          <Text style={styles.icon}>🎉</Text>
+        {/* HEADER */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Seu plano está pronto! 💪</Text>
+          <Text style={styles.subtitle}>
+            Criamos um plano totalmente personalizado para atingir seu objetivo
+            real, considerando seu peso, rotina, nível de disciplina e estilo
+            de vida.
+          </Text>
         </View>
 
-        <Text style={styles.title}>Quiz Concluído!</Text>
-        <Text style={styles.subtitle}>
-          Analisamos suas respostas e criamos um plano personalizado para você.
-        </Text>
+        {/* BLOCO PESO */}
+        <View style={styles.weightCard}>
+          <Text style={styles.cardTitle}>Sua evolução projetada</Text>
 
-        <View style={styles.benefitsContainer}>
-          <Text style={styles.benefitsTitle}>Seu plano inclui:</Text>
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>✓</Text>
-            <Text style={styles.benefitText}>Dieta personalizada</Text>
+          <View style={styles.weightRow}>
+            <View style={styles.weightBlock}>
+              <Text style={styles.weightLabel}>Peso atual</Text>
+              <Text style={styles.weightValue}>{pesoAtual}kg</Text>
+            </View>
+
+            <Text style={styles.arrow}>→</Text>
+
+            <View style={styles.weightBlock}>
+              <Text style={styles.weightLabel}>Peso desejado</Text>
+              <Text style={styles.weightTarget}>{pesoDesejado}kg</Text>
+            </View>
           </View>
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>✓</Text>
-            <Text style={styles.benefitText}>Acompanhamento de progresso</Text>
-          </View>
-          <View style={styles.benefitItem}>
-            <Text style={styles.benefitIcon}>✓</Text>
-            <Text style={styles.benefitText}>Receitas exclusivas</Text>
+
+          <Text style={styles.weightFooter}>
+            Você precisa <Text style={styles.bold}>{tendencia}</Text>{" "}
+            <Text style={styles.bold}>{valorAbs}kg</Text>
+          </Text>
+        </View>
+
+        {/* BENEFÍCIOS */}
+        <View style={styles.benefits}>
+          <Text style={styles.benefitsTitle}>
+            Você está muito perto do seu novo corpo 🎯
+          </Text>
+
+          <Text style={styles.benefitsText}>
+            Preparamos um plano completo com refeições, metas diárias, lista
+            de compras e organização — tudo para você ganhar consistência
+            sem precisar pensar ou montar nada sozinho.
+          </Text>
+
+          <View style={styles.list}>
+            <Text style={styles.item}>✔ Metas alimentares personalizadas</Text>
+            <Text style={styles.item}>✔ Refeições feitas para o seu objetivo</Text>
+            <Text style={styles.item}>✔ Lista de compras automática</Text>
+            <Text style={styles.item}>✔ Estratégias para sua disciplina atual</Text>
+            <Text style={styles.item}>✔ Plano adaptado à sua rotina real</Text>
           </View>
         </View>
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
+      {/* CTA */}
+      <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
         <TouchableOpacity
-          style={styles.continueButton}
-          onPress={handleContinue}
-          activeOpacity={0.8}
+          style={styles.cta}
+          activeOpacity={0.9}
+          onPress={() => router.replace("/(onboarding)/plans")}
         >
-          <Text style={styles.continueButtonText}>Continuar</Text>
+          <Text style={styles.ctaText}>Acessar meu plano completo →</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => router.replace("/")}>
+          <Text style={styles.retry}>Refazer quiz</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -59,78 +99,143 @@ export default function ResultScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.background,
   },
+
   content: {
-    flex: 1,
+    padding: spacing.lg,
+    paddingBottom: spacing.xl,
   },
-  contentContainer: {
-    padding: 24,
-    paddingBottom: 40,
+
+  header: {
+    alignItems: "center",
+    marginBottom: spacing.xl,
   },
-  iconContainer: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  icon: {
-    fontSize: 80,
-  },
+
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
-    textAlign: 'center',
-    marginBottom: 12,
+    fontSize: 28,
+    fontWeight: "700",
+    color: colors.textPrimary,
+    textAlign: "center",
+    marginBottom: spacing.sm,
   },
+
   subtitle: {
-    fontSize: 16,
-    color: '#666666',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 32,
+    ...typography.base,
+    color: colors.textSecondary,
+    textAlign: "center",
+    lineHeight: 22,
   },
-  benefitsContainer: {
-    backgroundColor: '#f9f9f9',
-    borderRadius: 16,
-    padding: 20,
-    gap: 16,
+
+  weightCard: {
+    backgroundColor: "#F8F8F8",
+    borderRadius: layout.borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
   },
-  benefitsTitle: {
+
+  cardTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#1a1a1a',
-    marginBottom: 8,
+    fontWeight: "600",
+    marginBottom: spacing.lg,
+    textAlign: "center",
   },
-  benefitItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+
+  weightRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
   },
-  benefitIcon: {
-    fontSize: 20,
-    color: '#007AFF',
-    fontWeight: 'bold',
+
+  weightBlock: {
+    alignItems: "center",
   },
-  benefitText: {
-    fontSize: 16,
-    color: '#1a1a1a',
+
+  weightLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
   },
+
+  weightValue: {
+    fontSize: 32,
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+
+  weightTarget: {
+    fontSize: 32,
+    fontWeight: "800",
+    color: colors.primary,
+  },
+
+  arrow: {
+    fontSize: 32,
+    color: colors.textTertiary,
+  },
+
+  weightFooter: {
+    marginTop: spacing.md,
+    textAlign: "center",
+    color: colors.textSecondary,
+  },
+
+  bold: {
+    fontWeight: "700",
+    color: colors.textPrimary,
+  },
+
+  benefits: {
+    alignItems: "center",
+  },
+
+  benefitsTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: spacing.sm,
+    textAlign: "center",
+  },
+
+  benefitsText: {
+    ...typography.base,
+    textAlign: "center",
+    color: colors.textSecondary,
+    marginBottom: spacing.lg,
+  },
+
+  list: {
+    backgroundColor: "#F7F7F7",
+    borderRadius: layout.borderRadius.lg,
+    padding: spacing.lg,
+    width: "100%",
+    gap: spacing.sm,
+  },
+
+  item: {
+    fontSize: 15,
+    fontWeight: "500",
+  },
+
   footer: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    paddingHorizontal: spacing.lg,
   },
-  continueButton: {
-    backgroundColor: '#00C758',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
+
+  cta: {
+    backgroundColor: colors.primary,
+    borderRadius: 999,
+    paddingVertical: spacing.md + 6,
+    alignItems: "center",
+    marginBottom: spacing.sm,
   },
-  continueButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
+
+  ctaText: {
+    color: colors.white,
+    fontSize: 18,
+    fontWeight: "700",
+  },
+
+  retry: {
+    textAlign: "center",
+    color: colors.textSecondary,
+    textDecorationLine: "underline",
   },
 });
-
