@@ -1,6 +1,13 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  TextInput,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useQuiz } from "@/hooks/QuizContext";
 
@@ -37,9 +44,14 @@ export default function QuizScreen() {
   if (!currentQuestion) return null;
 
   const progress = (state.currentStep + 1) / totalSteps;
+  const value = state.answers[currentQuestion.id];
 
-  function handleContinue() {
+  async function handleContinue() {
     if (canComplete && !activeMotivation) {
+      await AsyncStorage.setItem(
+        "@pending_quiz",
+        JSON.stringify(state.answers)
+      );
       router.replace("/(onboarding)/loading");
       return;
     }
@@ -104,40 +116,45 @@ export default function QuizScreen() {
 
         {!activeMotivation && (
           <>
+            {/* 🔹 DATA */}
             {currentQuestion.type === "date" && (
               <BirthDateQuestion
-                value={state.answers[currentQuestion.id]}
+                value={value}
                 onChange={(date) => answerQuestion(date)}
               />
             )}
 
+            {/* 🔹 ALTURA */}
             {currentQuestion.type === "number" &&
               currentQuestion.unit === "cm" && (
                 <HeightQuestion
-                  value={state.answers[currentQuestion.id]}
-                  onChange={(value) => answerQuestion(value)}
+                  value={value}
+                  onChange={(v) => answerQuestion(v)}
                 />
               )}
 
+            {/* 🔹 PESO ATUAL */}
             {currentQuestion.type === "number" &&
               currentQuestion.unit === "kg" &&
               currentQuestion.id === "12" && (
                 <WeightQuestion
-                  value={state.answers[currentQuestion.id]}
-                  onChange={(value) => answerQuestion(value)}
+                  value={value}
+                  onChange={(v) => answerQuestion(v)}
                 />
               )}
 
+            {/* 🔹 PESO DESEJADO */}
             {currentQuestion.type === "number" &&
               currentQuestion.unit === "kg" &&
               currentQuestion.id === "13" && (
                 <TargetWeightQuestion
                   currentWeight={state.answers["12"]}
-                  value={state.answers[currentQuestion.id]}
-                  onChange={(value) => answerQuestion(value)}
+                  value={value}
+                  onChange={(v) => answerQuestion(v)}
                 />
               )}
 
+            {/* 🔹 SINGLE / MULTIPLE */}
             {(currentQuestion.type === "single" ||
               currentQuestion.type === "multiple") && (
               <>
@@ -149,8 +166,8 @@ export default function QuizScreen() {
                   {currentQuestion.options?.map((option) => {
                     const selected =
                       currentQuestion.type === "multiple"
-                        ? state.answers[currentQuestion.id]?.includes(option)
-                        : state.answers[currentQuestion.id] === option;
+                        ? value?.selected?.includes(option)
+                        : value === option;
 
                     return (
                       <TouchableOpacity
@@ -160,12 +177,27 @@ export default function QuizScreen() {
                           selected && styles.optionSelected,
                         ]}
                         activeOpacity={0.85}
-                        onPress={() => answerQuestion(option)}
+                        onPress={() => {
+                          if (currentQuestion.type === "multiple") {
+                            const prev: string[] = value?.selected ?? [];
+                            const updated = prev.includes(option)
+                            ? prev.filter((o: string) => o !== option)
+                            : [...prev, option];      
+
+                            answerQuestion({
+                              selected: updated,
+                              other: value?.other ?? "",
+                            });
+                          } else {
+                            answerQuestion(option);
+                          }
+                        }}
                       >
                         <Text
                           style={[
                             styles.optionText,
-                            selected && styles.optionTextSelected,
+                            selected &&
+                              styles.optionTextSelected,
                           ]}
                         >
                           {option}
@@ -174,6 +206,22 @@ export default function QuizScreen() {
                     );
                   })}
                 </View>
+
+                {/* 🔥 OUTRAS ALERGIAS (ID 21) */}
+                {currentQuestion.type === "multiple" &&
+                  currentQuestion.allowOther && (
+                    <TextInput
+                      placeholder="Outras alergias (opcional)"
+                      value={value?.other ?? ""}
+                      onChangeText={(text) =>
+                        answerQuestion({
+                          selected: value?.selected ?? [],
+                          other: text,
+                        })
+                      }
+                      style={styles.otherInput}
+                    />
+                  )}
               </>
             )}
           </>
@@ -213,12 +261,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  backButton: { width: 32, height: 32, justifyContent: "center", alignItems: "center" },
+  backButton: {
+    width: 32,
+    height: 32,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   backArrow: { fontSize: 20, color: colors.textSecondary },
   progressContainer: { flex: 1, marginLeft: spacing.sm },
-  progressTrack: { height: 4, backgroundColor: colors.borderLight, borderRadius: 4 },
-  progressBar: { height: 4, backgroundColor: colors.primary },
-  content: { flex: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.xl },
+  progressTrack: {
+    height: 4,
+    backgroundColor: colors.borderLight,
+    borderRadius: 4,
+  },
+  progressBar: {
+    height: 4,
+    backgroundColor: colors.primary,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xl,
+  },
   question: {
     fontSize: 30,
     lineHeight: 30,
@@ -241,6 +305,13 @@ const styles = StyleSheet.create({
   },
   optionText: { ...typography.base, color: colors.textPrimary },
   optionTextSelected: { color: colors.primaryDark },
+  otherInput: {
+    marginTop: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: layout.borderRadius.base,
+    padding: spacing.md,
+  },
   footer: { paddingHorizontal: spacing.lg },
   continueButton: {
     backgroundColor: colors.primary,

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useMemo, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { QUIZ_QUESTIONS } from "@/hooks/quiz.questions";
 import { QUIZ_MOTIVATIONS_BY_QUESTION } from "@/hooks/quiz.motivations";
 
@@ -22,6 +23,7 @@ type QuizContextType = {
   goNext: () => void;
   goToPrevious: () => void;
   resetQuiz: () => void;
+  persistQuizLocally: () => Promise<void>;
 };
 
 const QuizContext = createContext<QuizContextType | null>(null);
@@ -37,19 +39,15 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
   const [activeMotivation, setActiveMotivation] = useState<string | null>(null);
 
   const totalSteps = QUIZ_QUESTIONS.length;
-
-  const currentQuestion =
-    QUIZ_QUESTIONS[state.currentStep] ?? null;
-
+  const currentQuestion = QUIZ_QUESTIONS[state.currentStep] ?? null;
   const hasPrevious = state.currentStep > 0;
+  const isLastQuestion = state.currentStep === totalSteps - 1;
 
   const hasAnswer = useMemo(() => {
     if (!currentQuestion) return false;
     const value = state.answers[currentQuestion.id];
     return value !== undefined && value !== null;
   }, [state.answers, currentQuestion]);
-
-  const isLastQuestion = state.currentStep === totalSteps - 1;
 
   const canGoNext = hasAnswer && !isLastQuestion;
   const canComplete = hasAnswer && isLastQuestion;
@@ -71,13 +69,13 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
       const current = QUIZ_QUESTIONS[prev.currentStep];
       const motivation = QUIZ_MOTIVATIONS_BY_QUESTION[current.id];
 
-      // 1️⃣ Abrir motivação se existir
+      // 1️⃣ abrir motivação
       if (motivation && !activeMotivation) {
         setActiveMotivation(motivation);
         return prev;
       }
 
-      // 2️⃣ Fechar motivação e avançar
+      // 2️⃣ fechar motivação e avançar
       setActiveMotivation(null);
 
       if (prev.currentStep >= totalSteps - 1) return prev;
@@ -86,7 +84,6 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
   }
 
   function goToPrevious() {
-    // se estiver em motivação, apenas fecha
     if (activeMotivation) {
       setActiveMotivation(null);
       return;
@@ -101,6 +98,17 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
   function resetQuiz() {
     setActiveMotivation(null);
     setState(initialState);
+  }
+
+  async function persistQuizLocally() {
+    try {
+      await AsyncStorage.setItem(
+        "@pending_quiz",
+        JSON.stringify(state.answers)
+      );
+    } catch (err) {
+      console.warn("Erro ao salvar quiz localmente", err);
+    }
   }
 
   return (
@@ -119,6 +127,7 @@ export function QuizProvider({ children }: { children: React.ReactNode }) {
         goNext,
         goToPrevious,
         resetQuiz,
+        persistQuizLocally,
       }}
     >
       {children}

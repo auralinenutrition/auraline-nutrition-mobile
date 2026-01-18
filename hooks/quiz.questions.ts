@@ -35,8 +35,6 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
     type: "single",
     question: "Você já tentou seguir uma dieta antes?",
     options: ["Sim, muitas vezes", "Algumas vezes", "Poucas vezes", "Nunca"],
-    motivationText:
-      "Ótimo. Pessoas com um objetivo claro têm até 3x mais chances de manter consistência quando seguem um plano personalizado.",
   },
   {
     id: "5",
@@ -67,8 +65,6 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
     type: "single",
     question: "Como você avalia sua alimentação atualmente?",
     options: ["Muito ruim", "Ruim", "Mediana", "Boa", "Muito boa"],
-    motivationText:
-      "Seu plano será adaptado à sua rotina — não o contrário. É assim que resultados se tornam sustentáveis.",
   },
   {
     id: "9",
@@ -98,8 +94,6 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
     type: "number",
     question: "Qual peso você deseja atingir?",
     unit: "kg",
-    motivationText:
-      "Com base nos seus dados, é possível estimar uma evolução segura e realista. Usuários com perfis semelhantes ao seu começam a notar mudanças visíveis entre 2 e 4 semanas.",
   },
   {
     id: "14",
@@ -136,8 +130,6 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
     type: "single",
     question: "Como está a qualidade do seu sono?",
     options: ["Muito ruim", "Ruim", "Normal", "Bom", "Excelente"],
-    motivationText:
-      "Você não precisa ser perfeito. Seu plano será construído para funcionar mesmo nos dias difíceis.",
   },
   {
     id: "19",
@@ -166,16 +158,15 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: "21",
     type: "multiple",
-    question: "Você possui alguma alergia ou intolerância alimentar?",
+    question: "Você possui alguma alergia?",
     options: [
-      "Glúten",
       "Lactose",
-      "Ovos",
+      "Glúten",
       "Amendoim",
       "Frutos do mar",
-      "Nenhuma",
+      "Ovos",
+      "Nenhuma"
     ],
-    motivationText:
-      "Estamos prontos para montar um plano totalmente adaptado ao seu objetivo, sua rotina e suas dificuldades. Você está a poucos segundos de ver algo feito exclusivamente para você.",
+    allowOther: true,
   },
 ];

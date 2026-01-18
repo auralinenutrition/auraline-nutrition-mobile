@@ -1,163 +1,176 @@
-import { View, Text, TouchableOpacity, StyleSheet, TextInput } from "react-native";
-import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { useState } from "react";
-import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+import { supabase } from "@/services/supabase";
+import { saveQuizResponses } from "@/services/quiz.service";
+
+import { colors, spacing, typography, layout } from "@/theme";
 
 export default function RegisterScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
-  const [name, setName] = useState("");
+  const [name, setName] = useState(""); // 🔥 NOME
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleRegister = () => {
-    router.replace("/(tabs)/home");
-  };
+  async function handleRegister() {
+    if (!name || !email || !password) {
+      setError("Preencha nome, email e senha");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      /* =========================
+         🔐 CRIA USUÁRIO
+      ========================== */
+
+      const { error: authError } =
+        await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              name, // 🔥 salva nome do usuário
+            },
+          },
+        });
+
+      if (authError) throw authError;
+
+      /* =========================
+         🧠 RECUPERA QUIZ
+      ========================== */
+
+      const rawQuiz = await AsyncStorage.getItem("@pending_quiz");
+
+      if (rawQuiz) {
+        const answers = JSON.parse(rawQuiz);
+        await saveQuizResponses(answers);
+        await AsyncStorage.removeItem("@pending_quiz");
+      }
+
+      /* =========================
+         🚀 REDIRECIONA
+      ========================== */
+
+      router.replace("/(onboarding)/plans");
+    } catch (err: any) {
+      console.error("Erro ao registrar:", err);
+      setError(err?.message ?? "Erro ao criar conta");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Voltar</Text>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <View style={styles.content}>
+        <Text style={styles.title}>Criar conta</Text>
+        <Text style={styles.subtitle}>
+          Finalize seu cadastro para gerar seu plano
+        </Text>
+
+        {error && <Text style={styles.errorText}>{error}</Text>}
+
+        <TextInput
+          placeholder="Nome"
+          value={name}
+          onChangeText={setName}
+          style={styles.input}
+        />
+
+        <TextInput
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          style={styles.input}
+        />
+
+        <TextInput
+          placeholder="Senha"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          style={styles.input}
+        />
+
+        <TouchableOpacity
+          style={[
+            styles.button,
+            loading && styles.buttonDisabled,
+          ]}
+          disabled={loading}
+          onPress={handleRegister}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? "Criando conta..." : "Criar conta"}
+          </Text>
         </TouchableOpacity>
       </View>
-
-      <View style={styles.content}>
-        <Text style={styles.title}>Criar Conta</Text>
-        <Text style={styles.subtitle}>Preencha seus dados para começar</Text>
-
-        <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="Nome completo"
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="words"
-            placeholderTextColor="#999"
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            placeholderTextColor="#999"
-          />
-
-          {/* Campo senha com botão de olho */}
-          <View style={styles.passwordContainer}>
-            <TextInput
-              style={styles.passwordInput}
-              placeholder="Senha"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              placeholderTextColor="#999"
-            />
-
-            <TouchableOpacity
-              onPressIn={() => setShowPassword(true)}
-              onPressOut={() => setShowPassword(false)}
-              style={styles.eyeButton}
-              activeOpacity={1}
-            >
-              <Ionicons
-                name={showPassword ? "eye" : "eye-off"}
-                size={22}
-                color="#666"
-              />
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            style={styles.registerButton}
-            onPress={handleRegister}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.registerButtonText}>Criar Conta</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backButton: {
-    alignSelf: "flex-start",
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: "#007AFF",
-  },
+  container: { flex: 1, backgroundColor: colors.background },
   content: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
+    justifyContent: "center",
+    paddingHorizontal: spacing.lg,
   },
   title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#1a1a1a",
-    marginBottom: 8,
+    fontSize: 28,
+    fontWeight: "600",
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#666666",
-    marginBottom: 32,
+    ...typography.base,
+    color: colors.textSecondary,
+    marginBottom: spacing.lg,
   },
-  form: {
-    gap: 16,
+  errorText: {
+    color: colors.error,
+    marginBottom: spacing.md,
   },
   input: {
-    backgroundColor: "#f5f5f5",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    fontSize: 16,
-    color: "#1a1a1a",
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: layout.borderRadius.base,
+    padding: spacing.md,
+    marginBottom: spacing.md,
   },
-
-  passwordContainer: {
-    flexDirection: "row",
+  button: {
+    backgroundColor: colors.primary,
+    borderRadius: layout.borderRadius.base,
+    paddingVertical: spacing.md + 4,
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
-    paddingHorizontal: 16,
+    marginTop: spacing.md,
   },
-  passwordInput: {
-    flex: 1,
-    paddingVertical: 16,
-    fontSize: 16,
-    color: "#1a1a1a",
-  },
-  eyeButton: {
-    paddingLeft: 8,
-  },
-
-  registerButton: {
-    backgroundColor: "#00C758",
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  registerButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
+  buttonDisabled: { opacity: 0.6 },
+  buttonText: {
+    ...typography.base,
+    color: colors.white,
     fontWeight: "600",
   },
 });

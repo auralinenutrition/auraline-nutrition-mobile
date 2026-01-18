@@ -1,153 +1,129 @@
-import { View, Text, TouchableOpacity, StyleSheet, TextInput } from "react-native";
-import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useState } from "react";
-import { Ionicons } from "@expo/vector-icons";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from "react-native";
+import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "@/services/supabase";
+import { saveQuizToDatabase } from "@/services/quiz.service";
 
-export default function LoginScreen() {
+export default function Login() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    router.replace("/(tabs)/home");
-  };
+  async function handleLogin() {
+    if (!email || !password) {
+      Alert.alert("Erro", "Preencha email e senha.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // 1️⃣ Login
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error || !data.user) {
+        Alert.alert("Erro", error?.message || "Erro ao fazer login.");
+        return;
+      }
+
+      const userId = data.user.id;
+
+      // 2️⃣ Verifica quiz pendente
+      const pendingQuiz = await AsyncStorage.getItem("@pending_quiz");
+
+      if (pendingQuiz) {
+        await saveQuizToDatabase(JSON.parse(pendingQuiz), userId);
+        await AsyncStorage.removeItem("@pending_quiz");
+
+        // marca onboarding como concluído
+        await supabase
+          .from("users")
+          .update({ onboarding_done: true })
+          .eq("id", userId);
+      }
+
+      // 3️⃣ Verifica status do onboarding
+      const { data: userRow } = await supabase
+        .from("users")
+        .select("onboarding_done")
+        .eq("id", userId)
+        .single();
+
+      if (!userRow?.onboarding_done) {
+        router.replace("/(onboarding)/quiz");
+        return;
+      }
+
+      // 4️⃣ Usuário completo → home
+      router.replace("/(tabs)/home");
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Erro", "Erro inesperado ao fazer login.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Voltar</Text>
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      <Text style={styles.title}>Entrar</Text>
 
-      <View style={styles.content}>
-        <Text style={styles.title}>Entrar</Text>
-        <Text style={styles.subtitle}>Acesse sua conta</Text>
+      <TextInput
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        style={styles.input}
+      />
 
-        <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            placeholderTextColor="#999"
-          />
+      <TextInput
+        placeholder="Senha"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        style={styles.input}
+      />
 
-          {/* Campo senha com botão de olho */}
-          <View style={styles.passwordContainer}>
-            <TextInput
-              style={styles.passwordInput}
-              placeholder="Senha"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPassword}
-              placeholderTextColor="#999"
-            />
-
-            <TouchableOpacity
-              onPressIn={() => setShowPassword(true)}
-              onPressOut={() => setShowPassword(false)}
-              style={styles.eyeButton}
-              activeOpacity={1}
-            >
-              <Ionicons
-                name={showPassword ? "eye" : "eye-off"}
-                size={22}
-                color="#666"
-              />
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            style={styles.loginButton}
-            onPress={handleLogin}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.loginButtonText}>Entrar</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? "Entrando..." : "Entrar"}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backButton: {
-    alignSelf: "flex-start",
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: "#007AFF",
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 40,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "bold",
-    color: "#1a1a1a",
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#666666",
-    marginBottom: 32,
-  },
-  form: {
-    gap: 16,
-  },
+  container: { flex: 1, padding: 24, justifyContent: "center" },
+  title: { fontSize: 28, fontWeight: "700", marginBottom: 24 },
   input: {
-    backgroundColor: "#f5f5f5",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    fontSize: 16,
-    color: "#1a1a1a",
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
   },
-
-  passwordContainer: {
-    flexDirection: "row",
+  button: {
+    backgroundColor: "#000",
+    padding: 14,
+    borderRadius: 8,
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
-    paddingHorizontal: 16,
   },
-  passwordInput: {
-    flex: 1,
-    paddingVertical: 16,
-    fontSize: 16,
-    color: "#1a1a1a",
-  },
-  eyeButton: {
-    paddingLeft: 8,
-  },
-
-  loginButton: {
-    backgroundColor: "#00C758",
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  loginButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "600",
-  },
+  buttonText: { color: "#fff", fontWeight: "600" },
 });

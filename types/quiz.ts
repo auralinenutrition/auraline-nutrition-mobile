@@ -1,45 +1,57 @@
-import { z } from "zod";
+export type QuizQuestionType =
+  | "single"
+  | "multiple"
+  | "number"
+  | "date";
+
+export type QuizBaseQuestion = {
+  id: string;
+  question: string;
+  type: QuizQuestionType;
+};
+
+export type SingleChoiceQuestion = QuizBaseQuestion & {
+  type: "single";
+  options: string[];
+};
+
+export type MultipleChoiceQuestion = QuizBaseQuestion & {
+  type: "multiple";
+  options: string[];
+  allowOther?: boolean;
+};
+
+export type NumberQuestion = QuizBaseQuestion & {
+  type: "number";
+  unit: "kg" | "cm";
+};
+
+export type DateQuestion = QuizBaseQuestion & {
+  type: "date";
+};
+
+export type QuizQuestion =
+  | SingleChoiceQuestion
+  | MultipleChoiceQuestion
+  | NumberQuestion
+  | DateQuestion;
 
 /**
- * Aceitamos qualquer tipo de resposta real do quiz
- * (string, múltipla, número, data)
+ * 🔥 TIPOS DE RESPOSTA (PARTE CRÍTICA)
  */
-export const QuizAnswerSchema = z.object({
-  questionId: z.string(),
-  answer: z.union([
-    z.string(),
-    z.number(),
-    z.array(z.string()),
-    z.date(),
-  ]),
-});
 
-export type QuizAnswerValue = z.infer<
-  typeof QuizAnswerSchema
->["answer"];
+// single → string
+// number → number
+// date → Date
+// multiple → array OU objeto (quando allowOther)
+export type QuizAnswer =
+  | string
+  | number
+  | Date
+  | string[]
+  | {
+      selected: string[];
+      other?: string;
+    };
 
-export type QuizAnswer = z.infer<typeof QuizAnswerSchema>;
-
-export interface QuizMotivation {
-  title: string;
-  text: string;
-}
-
-export interface QuizQuestion {
-  id: string;
-  type: "single" | "multiple" | "scale" | "date" | "number";
-  question: string;
-  options?: string[];
-  min?: number;
-  max?: number;
-  unit?: string;
-  motivationText?: string;
-  motivation?: QuizMotivation;
-}
-
-export interface QuizState {
-  currentStep: number;
-  answers: Record<string, QuizAnswerValue>;
-  isComplete: boolean;
-  pendingMotivation: QuizMotivation | null;
-}
+export type QuizAnswersMap = Record<string, QuizAnswer>;
