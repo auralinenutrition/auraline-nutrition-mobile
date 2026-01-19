@@ -164,7 +164,6 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
       "Glúten",
       "Amendoim",
       "Frutos do mar",
-      "Ovos",
       "Nenhuma"
     ],
     allowOther: true,

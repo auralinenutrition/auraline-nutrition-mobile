@@ -13,13 +13,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { supabase } from "@/services/supabase";
 import { saveQuizResponses } from "@/services/quiz.service";
-
 import { colors, spacing, typography, layout } from "@/theme";
 
 export default function RegisterScreen() {
   const router = useRouter();
 
-  const [name, setName] = useState(""); // 🔥 NOME
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,7 +26,7 @@ export default function RegisterScreen() {
 
   async function handleRegister() {
     if (!name || !email || !password) {
-      setError("Preencha nome, email e senha");
+      setError("Preencha todos os campos.");
       return;
     }
 
@@ -35,43 +34,26 @@ export default function RegisterScreen() {
       setLoading(true);
       setError(null);
 
-      /* =========================
-         🔐 CRIA USUÁRIO
-      ========================== */
-
       const { error: authError } =
         await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: {
-              name, // 🔥 salva nome do usuário
-            },
+            data: { name },
           },
         });
 
       if (authError) throw authError;
 
-      /* =========================
-         🧠 RECUPERA QUIZ
-      ========================== */
-
       const rawQuiz = await AsyncStorage.getItem("@pending_quiz");
-
       if (rawQuiz) {
-        const answers = JSON.parse(rawQuiz);
-        await saveQuizResponses(answers);
+        await saveQuizResponses(JSON.parse(rawQuiz));
         await AsyncStorage.removeItem("@pending_quiz");
       }
 
-      /* =========================
-         🚀 REDIRECIONA
-      ========================== */
-
       router.replace("/(onboarding)/plans");
     } catch (err: any) {
-      console.error("Erro ao registrar:", err);
-      setError(err?.message ?? "Erro ao criar conta");
+      setError(err?.message ?? "Erro ao criar conta.");
     } finally {
       setLoading(false);
     }
@@ -82,32 +64,30 @@ export default function RegisterScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={styles.content}>
-        <Text style={styles.title}>Criar conta</Text>
-        <Text style={styles.subtitle}>
-          Finalize seu cadastro para gerar seu plano
+        <Text style={styles.title}>
+          Crie sua conta 
         </Text>
 
-        {error && <Text style={styles.errorText}>{error}</Text>}
+        {error && <Text style={styles.error}>{error}</Text>}
 
+        <Text style={styles.label}>Nome*</Text>
         <TextInput
-          placeholder="Nome"
           value={name}
           onChangeText={setName}
           style={styles.input}
         />
 
+        <Text style={styles.label}>E-mail*</Text>
         <TextInput
-          placeholder="Email"
           value={email}
           onChangeText={setEmail}
-          keyboardType="email-address"
           autoCapitalize="none"
+          keyboardType="email-address"
           style={styles.input}
         />
 
+        <Text style={styles.label}>Senha*</Text>
         <TextInput
-          placeholder="Senha"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
@@ -123,35 +103,30 @@ export default function RegisterScreen() {
           onPress={handleRegister}
         >
           <Text style={styles.buttonText}>
-            {loading ? "Criando conta..." : "Criar conta"}
+            {loading ? "Criando conta..." : "Criar minha conta"}
           </Text>
         </TouchableOpacity>
-      </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  content: {
+  container: {
     flex: 1,
+    backgroundColor: colors.background,
     justifyContent: "center",
     paddingHorizontal: spacing.lg,
   },
   title: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: "600",
     color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  subtitle: {
-    ...typography.base,
-    color: colors.textSecondary,
     marginBottom: spacing.lg,
   },
-  errorText: {
-    color: colors.error,
-    marginBottom: spacing.md,
+  label: {
+    ...typography.sm,
+    color: colors.textSecondary,
+    marginBottom: 4,
   },
   input: {
     borderWidth: 1,
@@ -163,7 +138,7 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: colors.primary,
     borderRadius: layout.borderRadius.base,
-    paddingVertical: spacing.md + 4,
+    paddingVertical: spacing.md + 2,
     alignItems: "center",
     marginTop: spacing.md,
   },
@@ -172,5 +147,9 @@ const styles = StyleSheet.create({
     ...typography.base,
     color: colors.white,
     fontWeight: "600",
+  },
+  error: {
+    color: colors.error,
+    marginBottom: spacing.md,
   },
 });

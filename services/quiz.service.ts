@@ -1,4 +1,5 @@
 import { supabase } from "@/services/supabase";
+
 /* ======================================================
    🔧 HELPERS
 ====================================================== */
@@ -13,12 +14,10 @@ import { supabase } from "@/services/supabase";
 function extractMultiple(value: any): string[] {
   if (!value) return [];
 
-  // Caso novo (objeto com selected)
   if (typeof value === "object" && Array.isArray(value.selected)) {
     return value.selected;
   }
 
-  // Fallback antigo (array direto)
   if (Array.isArray(value)) {
     return value;
   }
@@ -31,10 +30,29 @@ function extractMultiple(value: any): string[] {
  */
 function extractOther(value: any): string | null {
   if (value && typeof value === "object" && typeof value.other === "string") {
-    return value.other.trim() || null;
+    const trimmed = value.other.trim();
+    return trimmed.length > 0 ? trimmed : null;
   }
   return null;
 }
+
+/**
+ * Meses por extenso em PT-BR
+ */
+const MONTHS_PT = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
 
 /* ======================================================
    🧠 QUIZ → BANCO
@@ -51,7 +69,7 @@ export async function saveQuizResponses(answers: Record<string, any>) {
   }
 
   /* =========================
-     🎯 DADOS SIMPLES (SINGLE)
+     🎯 SINGLE
   ========================== */
 
   const objetivo = answers["1"];
@@ -62,6 +80,7 @@ export async function saveQuizResponses(answers: Record<string, any>) {
   const refeicoesDia = answers["7"];
   const alimentacaoAtual = answers["8"];
   const genero = answers["9"];
+  const nivelDisciplina = answers["14"];
   const horarioDificil = answers["16"];
   const agua = answers["17"];
   const sono = answers["18"];
@@ -90,29 +109,29 @@ export async function saveQuizResponses(answers: Record<string, any>) {
   const pesoDesejado = answers["13"];
 
   /* =========================
-   🎂 DATA DE NASCIMENTO
-========================== */
+     🎂 DATA DE NASCIMENTO
+  ========================== */
 
-const birthRaw = answers["10"];
+  const birthRaw = answers["10"];
 
-const birthDate =
-  birthRaw instanceof Date
-    ? birthRaw
-    : typeof birthRaw === "string"
-    ? new Date(birthRaw)
+  const birthDate =
+    birthRaw instanceof Date
+      ? birthRaw
+      : typeof birthRaw === "string"
+      ? new Date(birthRaw)
+      : null;
+
+  const diaNascimento = birthDate
+    ? String(birthDate.getDate()).padStart(2, "0")
     : null;
 
-const diaNascimento = birthDate
-  ? String(birthDate.getDate()).padStart(2, "0")
-  : null;
+  const mesNascimento = birthDate
+    ? MONTHS_PT[birthDate.getMonth()] // 🔥 POR EXTENSO
+    : null;
 
-const mesNascimento = birthDate
-  ? String(birthDate.getMonth() + 1).padStart(2, "0")
-  : null;
-
-const anoNascimento = birthDate
-  ? String(birthDate.getFullYear())
-  : null;
+  const anoNascimento = birthDate
+    ? String(birthDate.getFullYear())
+    : null;
 
   /* =========================
      💾 INSERT
@@ -127,9 +146,11 @@ const anoNascimento = birthDate
     horario_treino: horarioTreino,
     alimentacao_atual: alimentacaoAtual,
     refeicoes_dia: refeicoesDia,
+
     rotina_trabalho: rotinaTrabalho,
-    nivel_disciplina: answers["14"],
+    nivel_disciplina: nivelDisciplina,
     dificuldade_principal: dificuldadePrincipal,
+
     horario_dificil: horarioDificil,
     agua,
     sono,

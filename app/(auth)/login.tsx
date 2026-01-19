@@ -1,77 +1,44 @@
-import { useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Alert,
 } from "react-native";
+import { useState } from "react";
 import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "@/services/supabase";
-import { saveQuizToDatabase } from "@/services/quiz.service";
+import { colors, spacing, typography, layout } from "@/theme";
 
-export default function Login() {
+export default function LoginScreen() {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleLogin() {
     if (!email || !password) {
-      Alert.alert("Erro", "Preencha email e senha.");
+      setError("Preencha email e senha.");
       return;
     }
 
     try {
       setLoading(true);
+      setError(null);
 
-      // 1️⃣ Login
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { error } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
-      if (error || !data.user) {
-        Alert.alert("Erro", error?.message || "Erro ao fazer login.");
-        return;
-      }
+      if (error) throw error;
 
-      const userId = data.user.id;
-
-      // 2️⃣ Verifica quiz pendente
-      const pendingQuiz = await AsyncStorage.getItem("@pending_quiz");
-
-      if (pendingQuiz) {
-        await saveQuizToDatabase(JSON.parse(pendingQuiz), userId);
-        await AsyncStorage.removeItem("@pending_quiz");
-
-        // marca onboarding como concluído
-        await supabase
-          .from("users")
-          .update({ onboarding_done: true })
-          .eq("id", userId);
-      }
-
-      // 3️⃣ Verifica status do onboarding
-      const { data: userRow } = await supabase
-        .from("users")
-        .select("onboarding_done")
-        .eq("id", userId)
-        .single();
-
-      if (!userRow?.onboarding_done) {
-        router.replace("/(onboarding)/quiz");
-        return;
-      }
-
-      // 4️⃣ Usuário completo → home
       router.replace("/(tabs)/home");
-    } catch (err) {
-      console.error(err);
-      Alert.alert("Erro", "Erro inesperado ao fazer login.");
+    } catch (err: any) {
+      setError(err?.message ?? "Erro ao entrar.");
     } finally {
       setLoading(false);
     }
@@ -79,51 +46,101 @@ export default function Login() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Entrar</Text>
-
-      <TextInput
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        style={styles.input}
-      />
-
-      <TextInput
-        placeholder="Senha"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        style={styles.input}
-      />
-
+      {/* 🔙 VOLTAR */}
       <TouchableOpacity
-        style={styles.button}
-        onPress={handleLogin}
-        disabled={loading}
+        onPress={() => router.replace("/")}
+        style={styles.back}
       >
-        <Text style={styles.buttonText}>
-          {loading ? "Entrando..." : "Entrar"}
-        </Text>
+        <Text style={styles.backText}>←</Text>
       </TouchableOpacity>
+      {/* 📝 FORMULÁRIO */}
+        <Text style={styles.title}>Entrar</Text>
+
+        {error && <Text style={styles.error}>{error}</Text>}
+
+        <Text style={styles.label}>E-mail*</Text>
+        <TextInput
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          style={styles.input}
+        />
+
+        <Text style={styles.label}>Senha*</Text>
+        <TextInput
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          style={styles.input}
+        />
+
+        <TouchableOpacity
+          style={[
+            styles.button,
+            loading && styles.buttonDisabled,
+          ]}
+          disabled={loading}
+          onPress={handleLogin}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? "Entrando..." : "Entrar"}
+          </Text>
+        </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 24, justifyContent: "center" },
-  title: { fontSize: 28, fontWeight: "700", marginBottom: 24 },
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+    justifyContent: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  back: {
+    position: "absolute",
+    top: 48,
+    left: spacing.lg,
+    zIndex: 10,
+  },
+  backText: {
+    fontSize: 22,
+    color: colors.textPrimary,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "600",
+    color: colors.textPrimary,
+    marginBottom: spacing.lg,
+  },
+  label: {
+    ...typography.sm,
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
   input: {
     borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
+    borderColor: colors.border,
+    borderRadius: layout.borderRadius.base,
+    padding: spacing.md,
+    marginBottom: spacing.md,
   },
   button: {
-    backgroundColor: "#000",
-    padding: 14,
-    borderRadius: 8,
+    backgroundColor: colors.primary,
+    borderRadius: layout.borderRadius.base,
+    paddingVertical: spacing.md + 2,
     alignItems: "center",
+    marginTop: spacing.md,
   },
-  buttonText: { color: "#fff", fontWeight: "600" },
+  buttonDisabled: { opacity: 0.6 },
+  buttonText: {
+    ...typography.base,
+    color: colors.white,
+    fontWeight: "600",
+  },
+  error: {
+    color: colors.error,
+    marginBottom: spacing.md,
+  },
 });
