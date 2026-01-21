@@ -53,40 +53,55 @@ export default function LoginScreen() {
       >
         <Text style={styles.backText}>←</Text>
       </TouchableOpacity>
+
       {/* 📝 FORMULÁRIO */}
-        <Text style={styles.title}>Entrar</Text>
+      <Text style={styles.title}>Bem-vindo de volta</Text>
 
-        {error && <Text style={styles.error}>{error}</Text>}
+      {error && <Text style={styles.error}>{error}</Text>}
 
-        <Text style={styles.label}>E-mail*</Text>
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          style={styles.input}
-        />
+      <Text style={styles.label}>E-mail*</Text>
+      <TextInput
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
+        style={styles.input}
+      />
 
-        <Text style={styles.label}>Senha*</Text>
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          style={styles.input}
-        />
+      <Text style={styles.label}>Senha*</Text>
+      <TextInput
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        style={styles.input}
+      />
 
-        <TouchableOpacity
-          style={[
-            styles.button,
-            loading && styles.buttonDisabled,
-          ]}
-          disabled={loading}
-          onPress={handleLogin}
-        >
-          <Text style={styles.buttonText}>
-            {loading ? "Entrando..." : "Entrar"}
-          </Text>
-        </TouchableOpacity>
+      <TouchableOpacity
+        style={[
+          styles.button,
+          loading && styles.buttonDisabled,
+        ]}
+        disabled={loading}
+        onPress={handleLogin}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? "Entrando..." : "Entrar"}
+        </Text>
+      </TouchableOpacity>
+
+      <Text style={styles.textnext1}>
+        Ainda não tem uma conta?
+      </Text>
+
+      {/* 🔗 TEXTO CLICÁVEL PARA O QUIZ */}
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => router.push("/(onboarding)/quiz")}
+      >
+        <Text style={styles.textnext2}>
+          Complete o quiz para começar!
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -113,6 +128,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.textPrimary,
     marginBottom: spacing.lg,
+    textAlign: "center",
   },
   label: {
     ...typography.sm,
@@ -142,5 +158,16 @@ const styles = StyleSheet.create({
   error: {
     color: colors.error,
     marginBottom: spacing.md,
+    textAlign: "center",
+  },
+  textnext1: {
+    marginTop: spacing.md,
+    textAlign: "center",
+    color: colors.textSecondary,
+  },
+  textnext2: {
+    marginTop: spacing.md,
+    textAlign: "center",
+    color: colors.primary,
   },
 });

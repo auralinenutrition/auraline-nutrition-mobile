@@ -34,6 +34,9 @@ export default function RegisterScreen() {
       setLoading(true);
       setError(null);
 
+      /* =========================
+         🔐 CRIA USUÁRIO
+      ========================== */
       const { error: authError } =
         await supabase.auth.signUp({
           email,
@@ -45,13 +48,31 @@ export default function RegisterScreen() {
 
       if (authError) throw authError;
 
+      /* =========================
+         🧠 SALVA QUIZ
+      ========================== */
       const rawQuiz = await AsyncStorage.getItem("@pending_quiz");
       if (rawQuiz) {
         await saveQuizResponses(JSON.parse(rawQuiz));
         await AsyncStorage.removeItem("@pending_quiz");
       }
 
-      router.replace("/(onboarding)/plans");
+      /* =========================
+         💳 RECUPERA PLANO ESCOLHIDO
+         (sem mudar layout)
+      ========================== */
+      const selectedPlan =
+        (await AsyncStorage.getItem("@selected_plan")) ?? "free";
+
+      // 🔥 FUTURO:
+      // await saveUserPlan(user.id, selectedPlan);
+
+      await AsyncStorage.removeItem("@selected_plan");
+
+      /* =========================
+         🚀 VAI PARA HOME
+      ========================== */
+      router.replace("/(tabs)/home");
     } catch (err: any) {
       setError(err?.message ?? "Erro ao criar conta.");
     } finally {
@@ -64,52 +85,62 @@ export default function RegisterScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-        <Text style={styles.title}>
-          Crie sua conta 
+      <Text style={styles.title}>Crie sua conta</Text>
+
+      {error && <Text style={styles.error}>{error}</Text>}
+
+      <Text style={styles.label}>Nome*</Text>
+      <TextInput
+        value={name}
+        onChangeText={setName}
+        style={styles.input}
+      />
+
+      <Text style={styles.label}>E-mail*</Text>
+      <TextInput
+        value={email}
+        onChangeText={setEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
+        style={styles.input}
+      />
+
+      <Text style={styles.label}>Senha*</Text>
+      <TextInput
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+        style={styles.input}
+      />
+
+      <TouchableOpacity
+        style={[
+          styles.button,
+          loading && styles.buttonDisabled,
+        ]}
+        disabled={loading}
+        onPress={handleRegister}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? "Criando conta..." : "Criar minha conta"}
         </Text>
+      </TouchableOpacity>
 
-        {error && <Text style={styles.error}>{error}</Text>}
-
-        <Text style={styles.label}>Nome*</Text>
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          style={styles.input}
-        />
-
-        <Text style={styles.label}>E-mail*</Text>
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          style={styles.input}
-        />
-
-        <Text style={styles.label}>Senha*</Text>
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          style={styles.input}
-        />
-
-        <TouchableOpacity
-          style={[
-            styles.button,
-            loading && styles.buttonDisabled,
-          ]}
-          disabled={loading}
-          onPress={handleRegister}
-        >
-          <Text style={styles.buttonText}>
-            {loading ? "Criando conta..." : "Criar minha conta"}
-          </Text>
-        </TouchableOpacity>
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => router.push("/(onboarding)/quiz")}
+      >
+        <Text style={styles.quizText}>
+          Refazer o quiz antes de registrar-se
+        </Text>
+      </TouchableOpacity>
     </KeyboardAvoidingView>
   );
 }
 
+/* =========================
+   🎨 STYLES — INTACTOS
+========================== */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -122,6 +153,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.textPrimary,
     marginBottom: spacing.lg,
+    textAlign: "center",
+  },
+  quizText: {
+    marginTop: spacing.md,
+    color: colors.primary,
+    textAlign: "center",
   },
   label: {
     ...typography.sm,
