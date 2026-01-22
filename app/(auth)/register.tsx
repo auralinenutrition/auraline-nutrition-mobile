@@ -13,6 +13,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { supabase } from "@/services/supabase";
 import { saveQuizResponses } from "@/services/quiz.service";
+import { saveUserPlan } from "@/services/plan.service";
 import { colors, spacing, typography, layout } from "@/theme";
 
 export default function RegisterScreen() {
@@ -37,16 +38,23 @@ export default function RegisterScreen() {
       /* =========================
          🔐 CRIA USUÁRIO
       ========================== */
-      const { error: authError } =
-        await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { name },
-          },
-        });
+      const { error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name },
+        },
+      });
 
       if (authError) throw authError;
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        throw new Error("Usuário não encontrado após cadastro.");
+      }
 
       /* =========================
          🧠 SALVA QUIZ
@@ -58,19 +66,20 @@ export default function RegisterScreen() {
       }
 
       /* =========================
-         💳 RECUPERA PLANO ESCOLHIDO
-         (sem mudar layout)
+         💳 SALVA PLANO ESCOLHIDO
       ========================== */
       const selectedPlan =
         (await AsyncStorage.getItem("@selected_plan")) ?? "free";
 
-      // 🔥 FUTURO:
-      // await saveUserPlan(user.id, selectedPlan);
+      await saveUserPlan(
+        user.id,
+        selectedPlan as "free" | "premium" | "lifetime"
+      );
 
       await AsyncStorage.removeItem("@selected_plan");
 
       /* =========================
-         🚀 VAI PARA HOME
+         🚀 HOME
       ========================== */
       router.replace("/(tabs)/home");
     } catch (err: any) {
@@ -188,5 +197,6 @@ const styles = StyleSheet.create({
   error: {
     color: colors.error,
     marginBottom: spacing.md,
+    textAlign: "center",
   },
 });

@@ -43,9 +43,8 @@ export default function HomeScreen() {
         {/* Plano do dia */}
         <TouchableOpacity
           style={styles.cardPrimary}
-          onPress={() => {
-            // futuramente: plano gerado por IA
-          }}
+          onPress={() => router.push("/(stack)/plan")}
+
         >
           <Ionicons
             name="restaurant-outline"
@@ -128,7 +127,7 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 26,
     fontWeight: "600",
-    marginTop: 50,
+    marginTop: 90,
     color: colors.textPrimary,
   },
   subtitle: {
@@ -138,7 +137,7 @@ const styles = StyleSheet.create({
   },
   cards: {
     gap: 40,
-    marginTop: 30,
+    marginTop: 50,
   },
   cardPrimary: {
     backgroundColor: colors.white,

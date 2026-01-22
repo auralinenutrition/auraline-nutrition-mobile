@@ -148,6 +148,14 @@ export default function ProfileScreen() {
           value={data.dificuldade_principal.join(", ")}
         />
       </Section>
+      <TouchableOpacity
+  style={styles.managePlanButton}
+  onPress={() => router.push("/(stack)/manage-plan")}
+>
+  <Text style={styles.managePlanText}>
+    Gerenciar plano
+  </Text>
+      </TouchableOpacity>
 
       {/* 🔴 BOTÃO SAIR */}
       <TouchableOpacity
@@ -246,4 +254,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  managePlanButton: {
+  backgroundColor: colors.white,
+  borderRadius: layout.borderRadius.base,
+  paddingVertical: spacing.md,
+  alignItems: "center",
+  marginTop: spacing.lg,
+  borderWidth: 1,
+  borderColor: colors.primary,
+},
+managePlanText: {
+  color: colors.primary,
+  fontWeight: "600",
+},
+
 });
