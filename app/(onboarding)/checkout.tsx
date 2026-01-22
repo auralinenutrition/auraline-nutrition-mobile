@@ -8,6 +8,9 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Linking from "expo-linking";
+import { supabase } from "@/services/supabase";
+import Constants from "expo-constants";
 
 type PlanType = "premium" | "lifetime";
 
@@ -43,13 +46,46 @@ export default function CheckoutScreen() {
   }
 
   async function handleCheckout() {
-    setIsProcessing(true);
+    try {
+      setIsProcessing(true);
 
-    // 🔥 MOCK DE PAGAMENTO
-    setTimeout(() => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        router.replace("/(auth)/login");
+        return;
+      }
+
+      const response = await fetch(
+        "https://khgmjbsfblabpcktajea.supabase.co/functions/v1/create-checkout-session",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${Constants.expoConfig?.extra?.supabaseAnonKey}`,
+
+          },
+          body: JSON.stringify({
+            planType: plan,
+            userId: user.id,
+          }),
+        }
+      );
+
+      const { url } = await response.json();
+
+      if (!url) {
+        throw new Error("URL de checkout não recebida.");
+      }
+
+      Linking.openURL(url);
+    } catch (error) {
+      console.log("Erro no checkout:", error);
+    } finally {
       setIsProcessing(false);
-      router.replace("/(auth)/register");
-    }, 1500);
+    }
   }
 
   const config = PLAN_CONFIG[plan];
@@ -62,9 +98,7 @@ export default function CheckoutScreen() {
           onPress={() => router.back()}
           style={styles.backButton}
         >
-          <Text style={styles.backButtonText}>
-            ← Voltar
-          </Text>
+          <Text style={styles.backButtonText}>← Voltar</Text>
         </TouchableOpacity>
       </View>
 
@@ -72,13 +106,11 @@ export default function CheckoutScreen() {
       <View style={styles.content}>
         <Text style={styles.title}>Checkout</Text>
         <Text style={styles.subtitle}>
-          Em desenvolvimento – Mock de pagamento
+          Pagamento seguro via Stripe
         </Text>
 
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>
-            Resumo
-          </Text>
+          <Text style={styles.summaryTitle}>Resumo</Text>
 
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>
@@ -121,7 +153,7 @@ export default function CheckoutScreen() {
         >
           <Text style={styles.checkoutButtonText}>
             {isProcessing
-              ? "Processando..."
+              ? "Redirecionando..."
               : "Finalizar Compra"}
           </Text>
         </TouchableOpacity>
@@ -135,21 +167,10 @@ export default function CheckoutScreen() {
 ========================== */
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  backButton: {
-    alignSelf: "flex-start",
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: "#007AFF",
-  },
+  container: { flex: 1, backgroundColor: "#ffffff" },
+  header: { paddingHorizontal: 16, paddingVertical: 12 },
+  backButton: { alignSelf: "flex-start" },
+  backButtonText: { fontSize: 16, color: "#007AFF" },
   content: {
     flex: 1,
     paddingHorizontal: 24,
@@ -174,7 +195,6 @@ const styles = StyleSheet.create({
   summaryTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#1a1a1a",
     marginBottom: 16,
   },
   summaryRow: {
@@ -182,13 +202,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 12,
   },
-  summaryLabel: {
-    fontSize: 16,
-    color: "#666666",
-  },
+  summaryLabel: { fontSize: 16, color: "#666666" },
   summaryValue: {
     fontSize: 16,
-    color: "#1a1a1a",
     fontWeight: "500",
   },
   summaryDivider: {
@@ -199,7 +215,6 @@ const styles = StyleSheet.create({
   summaryLabelTotal: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#1a1a1a",
   },
   summaryValueTotal: {
     fontSize: 18,
@@ -218,9 +233,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
   },
-  checkoutButtonDisabled: {
-    opacity: 0.6,
-  },
+  checkoutButtonDisabled: { opacity: 0.6 },
   checkoutButtonText: {
     color: "#ffffff",
     fontSize: 16,
