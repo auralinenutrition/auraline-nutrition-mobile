@@ -13,10 +13,10 @@ export default function PlansScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const handleSelectPlan = async (
+  async function handleSelectPlan(
     planType: "free" | "premium" | "lifetime"
-  ) => {
-    // 🔥 salva o plano escolhido
+  ) {
+    // 🔐 salva o plano escolhido (USADO NO CHECKOUT)
     await AsyncStorage.setItem("@selected_plan", planType);
 
     if (planType === "free") {
@@ -24,7 +24,7 @@ export default function PlansScreen() {
     } else {
       router.push("/(onboarding)/checkout");
     }
-  };
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -40,6 +40,7 @@ export default function PlansScreen() {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
+        {/* FREE */}
         <TouchableOpacity
           style={styles.planCard}
           onPress={() => handleSelectPlan("free")}
@@ -54,6 +55,7 @@ export default function PlansScreen() {
           </View>
         </TouchableOpacity>
 
+        {/* PREMIUM */}
         <TouchableOpacity
           style={[styles.planCard, styles.planCardPremium]}
           onPress={() => handleSelectPlan("premium")}
@@ -67,15 +69,14 @@ export default function PlansScreen() {
           <Text style={styles.planPeriod}>/mês</Text>
           <View style={styles.featuresContainer}>
             <Text style={styles.feature}>✓ Acesso completo</Text>
-            <Text style={styles.feature}>
-              ✓ Receitas ilimitadas
-            </Text>
+            <Text style={styles.feature}>✓ Receitas ilimitadas</Text>
             <Text style={styles.feature}>
               ✓ Acompanhamento avançado
             </Text>
           </View>
         </TouchableOpacity>
 
+        {/* LIFETIME */}
         <TouchableOpacity
           style={styles.planCard}
           onPress={() => handleSelectPlan("lifetime")}
@@ -97,7 +98,7 @@ export default function PlansScreen() {
   );
 }
 
-/* styles — INTACTOS */
+/* styles intactos */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#ffffff" },
   header: {

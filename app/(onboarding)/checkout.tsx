@@ -29,7 +29,7 @@ export default function CheckoutScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const [plan, setPlan] = useState<PlanType>("premium");
+  const [plan, setPlan] = useState<PlanType | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
@@ -37,17 +37,28 @@ export default function CheckoutScreen() {
   }, []);
 
   async function loadSelectedPlan() {
-    const storedPlan =
-      (await AsyncStorage.getItem("@selected_plan")) as PlanType;
+    const storedPlan = await AsyncStorage.getItem(
+      "@selected_plan"
+    );
 
-    if (storedPlan === "premium" || storedPlan === "lifetime") {
+    if (
+      storedPlan === "premium" ||
+      storedPlan === "lifetime"
+    ) {
       setPlan(storedPlan);
+    } else {
+      console.warn("Plano inválido:", storedPlan);
+      router.replace("/(onboarding)/plans");
     }
   }
 
   async function handleCheckout() {
+    if (!plan) return;
+
     try {
       setIsProcessing(true);
+
+      console.log("➡️ Checkout plano:", plan);
 
       const {
         data: { user },
@@ -65,7 +76,6 @@ export default function CheckoutScreen() {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${Constants.expoConfig?.extra?.supabaseAnonKey}`,
-
           },
           body: JSON.stringify({
             planType: plan,
@@ -74,25 +84,38 @@ export default function CheckoutScreen() {
         }
       );
 
-      const { url } = await response.json();
+      const text = await response.text();
 
-      if (!url) {
-        throw new Error("URL de checkout não recebida.");
-      }
+let data: any;
+try {
+  data = JSON.parse(text);
+} catch {
+  throw new Error("Resposta inválida do servidor");
+}
 
-      Linking.openURL(url);
+if (!response.ok) {
+  throw new Error(data?.error || "Erro no checkout");
+}
+
+if (!data?.url) {
+  throw new Error("URL de checkout não recebida");
+}
+
+
+      await Linking.openURL(data.url);
     } catch (error) {
-      console.log("Erro no checkout:", error);
+      console.error("Erro no checkout:", error);
     } finally {
       setIsProcessing(false);
     }
   }
 
+  if (!plan) return null;
+
   const config = PLAN_CONFIG[plan];
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => router.back()}
@@ -102,7 +125,6 @@ export default function CheckoutScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* CONTEÚDO */}
       <View style={styles.content}>
         <Text style={styles.title}>Checkout</Text>
         <Text style={styles.subtitle}>
@@ -134,7 +156,6 @@ export default function CheckoutScreen() {
         </View>
       </View>
 
-      {/* FOOTER */}
       <View
         style={[
           styles.footer,
@@ -149,7 +170,6 @@ export default function CheckoutScreen() {
           ]}
           onPress={handleCheckout}
           disabled={isProcessing}
-          activeOpacity={0.8}
         >
           <Text style={styles.checkoutButtonText}>
             {isProcessing
@@ -162,10 +182,7 @@ export default function CheckoutScreen() {
   );
 }
 
-/* =========================
-   🎨 STYLES (INTACTOS)
-========================== */
-
+/* styles intactos */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#ffffff" },
   header: { paddingHorizontal: 16, paddingVertical: 12 },
@@ -203,10 +220,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   summaryLabel: { fontSize: 16, color: "#666666" },
-  summaryValue: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
+  summaryValue: { fontSize: 16, fontWeight: "500" },
   summaryDivider: {
     height: 1,
     backgroundColor: "#e0e0e0",

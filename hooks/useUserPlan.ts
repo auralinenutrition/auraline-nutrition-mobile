@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { AppState } from "react-native";
 import { supabase } from "@/services/supabase";
 
 export type PlanType = "free" | "premium" | "lifetime";
@@ -118,8 +119,17 @@ export function useUserPlan() {
   };
 
   useEffect(() => {
-    loadUserPlan();
-  }, [loadUserPlan]);
+  loadUserPlan();
+
+  const sub = AppState.addEventListener("change", (state) => {
+    if (state === "active") {
+      loadUserPlan();
+    }
+  });
+
+  return () => sub.remove();
+}, [loadUserPlan]);
+
 
   return {
     plan,

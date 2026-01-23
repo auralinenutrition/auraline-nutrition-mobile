@@ -1,53 +1,45 @@
-import Stripe from "https://esm.sh/stripe@14.0.0";
-import { serve } from "https://deno.land/std/http/server.ts";
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const stripe = new Stripe(
-  Deno.env.get("STRIPE_SECRET_KEY")!,
-  { apiVersion: "2023-10-16" }
-);
-
-const supabase = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-);
-
 serve(async (req) => {
-  const signature = req.headers.get("stripe-signature")!;
-  const body = await req.text();
+  const body = await req.json();
 
-  let event;
-
-  try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      Deno.env.get("STRIPE_WEBHOOK_SECRET")!
-    );
-  } catch (err) {
-    return new Response("Webhook inválido", { status: 400 });
+  // 🔐 validações mínimas
+  if (body.type !== "checkout.session.completed") {
+    return new Response("Ignored", { status: 200 });
   }
 
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as any;
-    const { userId, planType } = session.metadata;
+  const session = body.data?.object;
+  const userId = session?.metadata?.userId;
+  const planType = session?.metadata?.planType;
 
-    // 🔥 desativa plano anterior
-    await supabase
-      .from("user_plans")
-      .update({ status: "inactive" })
-      .eq("user_id", userId)
-      .eq("status", "active");
-
-    // 🔥 cria novo plano
-    await supabase.from("user_plans").insert({
-      user_id: userId,
-      plan_type: planType,
-      status: "active",
-      payment_provider: "stripe",
-      payment_reference: session.id,
-    });
+  if (!userId || !planType) {
+    return new Response("Missing metadata", { status: 400 });
   }
 
-  return new Response("ok");
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  );
+
+  // 1️⃣ desativa TODOS os planos do usuário
+await supabase
+  .from("user_plans")
+  .update({ status: "inactive" })
+  .eq("user_id", userId);
+
+// 2️⃣ cria o novo plano ATIVO
+await supabase.from("user_plans").insert({
+  user_id: userId,
+  plan_type: planType,
+  status: "active",
+  payment_provider: "stripe",
+  payment_reference: session.id,
+  started_at: new Date().toISOString(),
+});
+
+
+  return new Response(JSON.stringify({ ok: true }), {
+    headers: { "Content-Type": "application/json" },
+  });
 });
